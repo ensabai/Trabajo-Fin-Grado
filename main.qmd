@@ -15,6 +15,17 @@ library(readxl)
 library(zoo)
 ```
 
+```{r}
+theme_tfg <- theme_minimal() +
+  theme(axis.title.x = element_blank(),
+        axis.text = element_text(color = "black"),
+        axis.line.x.bottom = element_line(color = "black"),
+        axis.line.y.left = element_line(color = "black"),
+        axis.ticks.y  = element_line(color = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
 # Carga de los Datos
 
 Los datos se han obtenido de la [Massachussets DESE](https://hdl.handle.net/2452/833423), donde los institutos públicos de Massachusetts informaban de forma semanal el número de casos Covid-19 detectados entre el alumnado y el profesorado. Se ha descargado los reportes correspondientes a las 40 semanas del año escolar del curso 2021-2022, el último reporte analizado data del 16 de junio.
@@ -37,7 +48,7 @@ De este modo, el objetivo será extraer la información de las tablas correspond
 archivos <- list.files("data/reportes_covid",pattern = ".pdf")
 ```
 
-2.  **Extracción de los datos.** Creamos la estructura del dataframe e implementamos una función que permita extraer la información deseada.
+2.  **Extracción de los datos.** Implementamos una función que permita extraer la información deseada.
 
 La función recibe cómo parámetro un iterable con el nombre de los archivos y devuelve un dataframe con los datos correspondientes al código del distrito, nombre del distrito, número de casos covid-19 en alumnos, número de casos covid-19 en profesores, número de pruebas de grupo rutinarias, número de positivos y ratio positivos/pruebas.
 
@@ -91,7 +102,7 @@ obt_data_distritos <- function(archivos){
 df <- obt_data_distritos(archivos)
 ```
 
-3.  **Adecuación de las variables**. Se pone el tipo adecuado a las variables obtenidas.
+3.  **Adecuación de las variables**. Se convierten al tipo adecuado las variables obtenidas y eliminamos las filas que contenga en la variable `Code` NAs.
 
 ```{r}
 #| warning: false
@@ -107,35 +118,9 @@ df <- df %>%
 # Selección de los distritos escolares
 
 ```{r}
-districts <- read_excel("data/districts.xlsx")
-districts <- districts[,1:3]
-names(districts) <- c("Name","Code","Type")
-```
-
-Inicialmente se disponen de 400 distritos escolares
-
-```{r}
-length(unique(df$Code))
-```
-
-Descartamos los distritos escolares autónomos, vocacionales y técnicos.
-
-```{r}
-districts_filt <- districts %>% filter(Type == "Public School District" & !(grepl(x = Name,pattern = "TEC|Vocational|Technical")) & !(grepl(x = Name,pattern = "non-op")))
-```
-
-```{r}
-selected_districts <- read.table("data/selected_districts.txt", sep = ",")
-selected_districts <- selected_districts %>% 
-  pivot_longer(1:72, names_to = "Index", values_to = "Name") %>% 
-  select(Name)
-
-selected_districts
-```
-
-```{r}
-selected_districts <- selected_districts %>% 
-  left_join(districts %>% select(Name, Code))
+selected_districts <- read_delim("data/selected_districts.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+selected_districts$Week <- as.factor(selected_districts$Week)
 ```
 
 ```{r}
@@ -153,8 +138,8 @@ sum(df$Students[df$Date >= as.Date("2022-03-03")]) + sum(df$Staff[df$Date >= as.
 
 ```{r}
 df_stu <- df %>% 
-  select(Name,Students,Date) %>%
-  pivot_wider(names_from = Name,values_from = Students) %>%
+  select(Code,Students,Date) %>%
+  pivot_wider(names_from = Code,values_from = Students) %>%
   arrange(Date)
 
 for(f in 2:nrow(df_stu)){
@@ -186,17 +171,17 @@ df_stu <- df_stu %>% arrange(Date)
 df_stu_smooth <- as.data.frame(apply(df_stu %>% select(-Date), 2, function(x){rollapply(floor(x),3,mean,align='center',fill=NA, partial = TRUE)}))
 df_stu_smooth <- cbind(df_stu_smooth,Date = df_stu$Date)
 df_stu_smooth <- df_stu_smooth %>% 
-  pivot_longer(-73,names_to = "Name",values_to = "Total") %>% 
-  filter(!is.na(Total))
-df_stu_smooth$Total <- floor(df_stu_smooth$Total)
+  pivot_longer(-73,names_to = "Code",values_to = "Students") %>% 
+  filter(!is.na(Students))
+df_stu_smooth$Students <- floor(df_stu_smooth$Students)
 
-sum(df_stu_smooth$Total[df_stu_smooth$Date >= as.Date("2022-03-03")])
+sum(df_stu_smooth$Students[df_stu_smooth$Date >= as.Date("2022-03-03")])
 ```
 
 ```{r}
 df_staff <- df %>% 
-  select(Name,Staff,Date) %>%
-  pivot_wider(names_from = Name,values_from = Staff) %>% 
+  select(Code,Staff,Date) %>%
+  pivot_wider(names_from = Code,values_from = Staff) %>% 
   arrange(Date)
 
 
@@ -228,15 +213,62 @@ df_staff <- df_staff %>% arrange(Date)
 df_staff_smooth <- as.data.frame(apply(df_staff %>% select(-Date), 2, function(x){rollapply(floor(x),3,mean,align='center',fill=NA, partial = TRUE)}))
 df_staff_smooth <- cbind(df_staff_smooth,Date = df_staff$Date)
 df_staff_smooth <- df_staff_smooth %>% 
-  pivot_longer(-73,names_to = "Name",values_to = "Total") %>% 
-  filter(!is.na(Total))
-df_staff_smooth$Total <- round(df_staff_smooth$Total)
+  pivot_longer(-73,names_to = "Code",values_to = "Staff") %>% 
+  filter(!is.na(Staff))
+df_staff_smooth$Staff <- round(df_staff_smooth$Staff)
 
-sum(df_staff_smooth$Total[df_staff_smooth$Date >= as.Date("2022-03-03")])
+sum(df_staff_smooth$Staff[df_staff_smooth$Date >= as.Date("2022-03-03")])
 ```
 
 ```{r}
-sum(df_staff_smooth$Total[df_staff_smooth$Date >= as.Date("2022-03-03")]) + sum(df_stu_smooth$Total[df_stu_smooth$Date >= as.Date("2022-03-03")])
+sum(df_staff_smooth$Staff[df_staff_smooth$Date >= as.Date("2022-03-03")]) + sum(df_stu_smooth$Students[df_stu_smooth$Date >= as.Date("2022-03-03")])
+```
+
+```{r}
+df_smooth <- left_join(df_staff_smooth,df_stu_smooth,by = c("Code","Date")) %>% 
+  mutate(Total = Staff + Students)
+
+df_smooth
+```
+
+```{r}
+df_smooth <- left_join(df_smooth,selected_districts %>% select(-Name))
+df_smooth
+```
+
+```{r}
+ClassSizebyRaceEthnicity <- read_excel("data/ClassSizebyRaceEthnicity.xlsx", 
+    skip = 1)
+
+glimpse(ClassSizebyRaceEthnicity)
+
+ClassSizebyRaceEthnicity[,3:12] <- apply(ClassSizebyRaceEthnicity[,3:12], 2, function(x){as.numeric(str_remove(x,","))})
+ClassSizebyRaceEthnicity <- ClassSizebyRaceEthnicity[,1:9]
+glimpse(ClassSizebyRaceEthnicity)
+```
+
+```{r}
+df_smooth <- df_smooth %>% left_join(ClassSizebyRaceEthnicity %>% select(`District Code`,`Number of Students`), by = c("Code"="District Code"))
+```
+
+
+```{r}
+df_smooth_grouped <- df_smooth %>% 
+  group_by(Week,Date) %>% 
+  summarise(Staff = sum(Staff), Students = sum(Students), Total = sum(Total), `Number of Students` = sum(`Number of Students`)) %>% 
+  mutate(Students1000 = Students / `Number of Students` * 1000)
+
+df_smooth_grouped
+```
+
+```{r}
+df_smooth_grouped %>% 
+  ggplot(aes(x = Date, y = Students1000, color = Week)) +
+  geom_point() +
+  geom_line() +
+  #scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(breaks=seq(0,35,5), expand = c(0.01, 0)) +
+  theme_tfg 
 ```
 
 # Otros indicadores
@@ -245,15 +277,75 @@ sum(df_staff_smooth$Total[df_staff_smooth$Date >= as.Date("2022-03-03")]) + sum(
 ClassSizebyRaceEthnicity <- read_excel("data/ClassSizebyRaceEthnicity.xlsx", 
     skip = 1)
 
+glimpse(ClassSizebyRaceEthnicity)
+```
+```{r}
+ClassSizebyRaceEthnicity[,3:12] <- apply(ClassSizebyRaceEthnicity[,3:12], 2, function(x){as.numeric(str_remove(x,","))})
+ClassSizebyRaceEthnicity <- ClassSizebyRaceEthnicity[,1:9]
+glimpse(ClassSizebyRaceEthnicity)
+```
+
+```{r}
 ClassSizebyGenPopulation <- read_excel("data/ClassSizebyGenPopulation.xlsx", 
     skip = 1)
+
+glimpse(ClassSizebyGenPopulation)
+```
+
+```{r}
+ClassSizebyGenPopulation[,3:10] <- apply(ClassSizebyGenPopulation[,3:10], 2, function(x){as.numeric(str_remove(x,","))})
+glimpse(ClassSizebyGenPopulation)
 ```
 
 Seleccionamos los distritos estudiados
 
 ```{r}
-ClassSizebyRaceEthnicity <- ClassSizebyRaceEthnicity %>% filter(`District Code` %in% selected_districts$Code)
-ClassSizebyGenPopulation <- ClassSizebyGenPopulation %>% filter(`District Code` %in% selected_districts$Code)
+ClassSizebyRaceEthnicity <- ClassSizebyRaceEthnicity %>% inner_join(selected_districts %>% select(Code,Week), by = c("District Code" = "Code"))
+ClassSizebyGenPopulation <- ClassSizebyGenPopulation %>% inner_join(selected_districts %>% select(Code,Week), by = c("District Code" = "Code"))
 ```
 
+```{r}
+#| warning: false
+ClassSizebyRaceEthnicity$african_scale <- scale(ClassSizebyRaceEthnicity$`African American %`)[,1]
+ClassSizebyRaceEthnicity$asian_scale <- scale(ClassSizebyRaceEthnicity$`Asian %`)[,1]
+ClassSizebyRaceEthnicity$hispanic_scale <- scale(ClassSizebyRaceEthnicity$`Hispanic %`)[,1]
+ClassSizebyRaceEthnicity$white_scale <- scale(ClassSizebyRaceEthnicity$`White %`)[,1]
+
+ClassSizebyRaceEthnicity %>% 
+  pivot_longer(11:14,names_to = "names",values_to = "values") %>%
+  ggplot(aes(x = names, y = values, fill = Week)) +
+  geom_hline(yintercept = 0, color = "grey", linetype = 2, size = 0.8) +
+  geom_point(aes(color = Week), position = position_jitterdodge(jitter.width = 0.2), alpha = 0.4) +
+  geom_boxplot(outliers = FALSE, alpha = 0.4) +
+  stat_summary(aes(color = Week), fun.y="mean", shape=23, position = position_jitterdodge(jitter.width = 0)) +
+  scale_y_continuous(breaks=seq(-3,6,1), limits = c(-2,6)) +
+  scale_x_discrete(labels=c("african_scale" = "Porcentaje\nNegros",
+                            "asian_scale" = "Porcentaje\nAsiáticos",
+                            "hispanic_scale" = "Porcentaje\nHispanos",
+                            "white_scale" = "Porcentaje\nBlancos")) +
+  labs(y = "Valores Escalados de la Variable", title = "Distribución de los Estudiantes de Acuerdo a la Raza o Grupo Étnico") +
+  theme_tfg
+```
+
+```{r}
+#| warning: false
+ClassSizebyGenPopulation$lis_scale <- scale(ClassSizebyGenPopulation$`Economically Disadvantaged %`)[,1]
+ClassSizebyGenPopulation$sd_scale <- scale(ClassSizebyGenPopulation$`Students with Disabilities %`)[,1]
+ClassSizebyGenPopulation$ell_scale <- scale(ClassSizebyGenPopulation$`English Language Learner %`)[,1]
+
+ClassSizebyGenPopulation %>% 
+  pivot_longer(12:14,names_to = "names",values_to = "values") %>%
+  ggplot(aes(x = names, y = values, fill = Week)) +
+  geom_hline(yintercept = 0, color = "grey", linetype = 2, size = 0.8) +
+  geom_point(aes(color = Week), position = position_jitterdodge(jitter.width = 0.2), alpha = 0.4) +
+  geom_boxplot(outliers = FALSE, alpha = 0.4) +
+  stat_summary(aes(color = Week), fun.y="mean", shape=23, position = position_jitterdodge(jitter.width = 0))+
+  scale_y_continuous(breaks=seq(-2,4,1), limits = c(-2,4.5)) +
+  scale_x_discrete(limits = c("lis_scale","sd_scale","ell_scale"),
+                   labels=c("lis_scale" = "Porcentaje de\nEstudiantes con\nBajos Ingresos",
+                            "sd_scale" = "Porcentaje de\nEstudiantes con\n Discapacidad",
+                            "ell_scale" = "Porcentaje de\nEstudiantes ELL")) +
+  labs(y = "Valores Escalados de la Variable", title = "Distribución de los Estudiantes en Poblaciones Seleccionadas por DESE") +
+  theme_tfg
+```
 
