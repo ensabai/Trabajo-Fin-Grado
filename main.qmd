@@ -1,0 +1,259 @@
+---
+title: "TFG"
+format: html
+editor: source
+---
+
+# Librerías
+
+```{r}
+#| warning: false
+rm(list = ls())
+library(pdftools)
+library(tidyverse)
+library(readxl)
+library(zoo)
+```
+
+# Carga de los Datos
+
+Los datos se han obtenido de la [Massachussets DESE](https://hdl.handle.net/2452/833423), donde los institutos públicos de Massachusetts informaban de forma semanal el número de casos Covid-19 detectados entre el alumnado y el profesorado. Se ha descargado los reportes correspondientes a las 40 semanas del año escolar del curso 2021-2022, el último reporte analizado data del 16 de junio.
+
+Los reportes constan de la siguiente estructura:
+
+-   La primera página se corresponde a un resumen de los resultados obtenidos.
+
+-   A partir de la segunda página se listan los distritos junto al número de positivos entre el alumnado y el profesorado, así como el número de pruebas de grupo rutinarias, el número de positivos y su ratio.
+
+-   A continuación, se muestra una tabla con los casos registrados en las organizaciones educativas colaboradoras.
+
+-   Finalmente, se listan los casos registrados en los colegios aprobados de educación especial.
+
+De este modo, el objetivo será extraer la información de las tablas correspondientes a la información de los distritos. Para ello, se ha implementado el siguiente código:
+
+1.  **Listado de los archivos.** Se lista el nombre de los archivos pdf contenidos en la carpeta data/reportes_covid. También se extraerá la fecha contenida en el nombre:
+
+```{r}
+archivos <- list.files("data/reportes_covid",pattern = ".pdf")
+```
+
+2.  **Extracción de los datos.** Creamos la estructura del dataframe e implementamos una función que permita extraer la información deseada.
+
+La función recibe cómo parámetro un iterable con el nombre de los archivos y devuelve un dataframe con los datos correspondientes al código del distrito, nombre del distrito, número de casos covid-19 en alumnos, número de casos covid-19 en profesores, número de pruebas de grupo rutinarias, número de positivos y ratio positivos/pruebas.
+
+```{r}
+#| warning: false
+obt_data_distritos <- function(archivos){
+  
+  fechas <- str_extract(string = archivos, pattern = "\\d{4}-\\d{1,2}-\\d{1,2}")
+  
+  df <- data.frame(Code = NA, Name = NA, Students = NA, Staff = NA, PT = NA, PPT = NA, PPR = NA, Date = NA)
+  
+  for(i in 1:length(archivos)){
+  
+  df2 <- pdf_text(paste0("data/reportes_covid/",archivos[i]))
+  
+  p <- 2
+  
+  fin <- FALSE
+  
+  while(fin == FALSE){
+    if(p == 2){
+      aux <- df2[[p]] %>%
+        str_split("\n") %>%
+        as_tibble(.name_repair=make.names)
+      aux <- aux %>%
+        slice(7:nrow(aux)) %>%
+        separate(X, into = c("Code","Name","Students","Staff","PT","PPT","PPR"), sep = "\\s{2,}")%>%
+      filter(Code != "") %>% 
+        mutate(Date = fechas[i])
+      
+    }else{
+      aux <- df2[[p]] %>%
+      str_split("\n") %>%
+      as_tibble(.name_repair=make.names) %>%
+      separate(X, into = c("Code","Name","Students","Staff","PT","PPT","PPR"), sep = "\\s{2,}") %>%
+      filter(Code != "") %>% 
+        mutate(Date = fechas[i])
+    }
+    df <- rbind(df,aux)
+    
+    p = p + 1
+    
+    fin <- grepl(pattern = "Education Collaboratives",df2[[p]])
+  }
+  
+  }
+  
+  return(df)
+}
+
+df <- obt_data_distritos(archivos)
+```
+
+3.  **Adecuación de las variables**. Se pone el tipo adecuado a las variables obtenidas.
+
+```{r}
+#| warning: false
+df <- df %>%
+  mutate(Students = as.numeric(Students),
+         Staff = as.numeric(Staff),
+         PT = as.numeric(PT),
+         PPT = as.numeric(PPT),
+         Date = as.Date(Date)) %>%
+  filter(!is.na(Code))
+```
+
+# Selección de los distritos escolares
+
+```{r}
+districts <- read_excel("data/districts.xlsx")
+districts <- districts[,1:3]
+names(districts) <- c("Name","Code","Type")
+```
+
+Inicialmente se disponen de 400 distritos escolares
+
+```{r}
+length(unique(df$Code))
+```
+
+Descartamos los distritos escolares autónomos, vocacionales y técnicos.
+
+```{r}
+districts_filt <- districts %>% filter(Type == "Public School District" & !(grepl(x = Name,pattern = "TEC|Vocational|Technical")) & !(grepl(x = Name,pattern = "non-op")))
+```
+
+```{r}
+selected_districts <- read.table("data/selected_districts.txt", sep = ",")
+selected_districts <- selected_districts %>% 
+  pivot_longer(1:72, names_to = "Index", values_to = "Name") %>% 
+  select(Name)
+
+selected_districts
+```
+
+```{r}
+selected_districts <- selected_districts %>% 
+  left_join(districts %>% select(Name, Code))
+```
+
+```{r}
+df <- df %>% 
+  filter(Code %in% selected_districts$Code)
+
+length(unique(df$Name))
+```
+
+```{r}
+sum(df$Students[df$Date >= as.Date("2022-03-03")]) + sum(df$Staff[df$Date >= as.Date("2022-03-03")])
+```
+
+# Preparación de los datos
+
+```{r}
+df_stu <- df %>% 
+  select(Name,Students,Date) %>%
+  pivot_wider(names_from = Name,values_from = Students) %>%
+  arrange(Date)
+
+for(f in 2:nrow(df_stu)){
+  if(df_stu$Date[f] - df_stu$Date[f-1] >= 14){
+    sem_imp <- cbind(Date = df_stu$Date[f] - 7,df_stu[df_stu$Date == df_stu$Date[f],2:73] / 2)
+    df_stu[df_stu$Date == df_stu$Date[f],2:73] <- df_stu[df_stu$Date == df_stu$Date[f],2:73] / 2
+    df_stu <- rbind(df_stu,sem_imp)
+  }
+}
+
+df_stu <- df_stu %>% arrange(Date)
+
+fecha <- df_stu$Date
+
+df_stu <- as.data.frame(apply(df_stu %>% select(-Date),2,function(x){
+  for(f in 2:length(x)){
+    if(x[f] > 1 & x[f-1] == 0){
+      x[f-1] <- x[f]/2
+      x[f] <- x[f]/2
+    }
+  }
+  return(x)
+}))
+
+df_stu <- cbind(Date = fecha, df_stu)
+
+df_stu <- df_stu %>% arrange(Date)
+
+df_stu_smooth <- as.data.frame(apply(df_stu %>% select(-Date), 2, function(x){rollapply(floor(x),3,mean,align='center',fill=NA, partial = TRUE)}))
+df_stu_smooth <- cbind(df_stu_smooth,Date = df_stu$Date)
+df_stu_smooth <- df_stu_smooth %>% 
+  pivot_longer(-73,names_to = "Name",values_to = "Total") %>% 
+  filter(!is.na(Total))
+df_stu_smooth$Total <- floor(df_stu_smooth$Total)
+
+sum(df_stu_smooth$Total[df_stu_smooth$Date >= as.Date("2022-03-03")])
+```
+
+```{r}
+df_staff <- df %>% 
+  select(Name,Staff,Date) %>%
+  pivot_wider(names_from = Name,values_from = Staff) %>% 
+  arrange(Date)
+
+
+for(f in 2:nrow(df_staff)){
+  if(df_staff$Date[f] - df_staff$Date[f-1] >= 14){
+    sem_imp <- cbind(Date = df_staff$Date[f] - 7,df_staff[df_staff$Date == df_staff$Date[f],2:73] / 2)
+    df_staff[df_staff$Date == df_staff$Date[f],2:73] <- df_staff[df_staff$Date == df_staff$Date[f],2:73] / 2
+    df_staff <- rbind(df_staff,sem_imp)
+  }
+}
+
+df_staff <- df_staff %>% arrange(Date)
+
+fecha <- df_staff$Date
+
+df_staff <- as.data.frame(apply(df_staff %>% select(-Date),2,function(x){
+  for(f in 2:length(x)){
+    if(x[f] > 1 & x[f-1] == 0){
+      x[f-1] <- x[f]/2
+      x[f] <- x[f]/2
+    }
+  }
+  return(x)
+}))
+
+df_staff <- cbind(Date = fecha, df_staff)
+df_staff <- df_staff %>% arrange(Date)
+
+df_staff_smooth <- as.data.frame(apply(df_staff %>% select(-Date), 2, function(x){rollapply(floor(x),3,mean,align='center',fill=NA, partial = TRUE)}))
+df_staff_smooth <- cbind(df_staff_smooth,Date = df_staff$Date)
+df_staff_smooth <- df_staff_smooth %>% 
+  pivot_longer(-73,names_to = "Name",values_to = "Total") %>% 
+  filter(!is.na(Total))
+df_staff_smooth$Total <- round(df_staff_smooth$Total)
+
+sum(df_staff_smooth$Total[df_staff_smooth$Date >= as.Date("2022-03-03")])
+```
+
+```{r}
+sum(df_staff_smooth$Total[df_staff_smooth$Date >= as.Date("2022-03-03")]) + sum(df_stu_smooth$Total[df_stu_smooth$Date >= as.Date("2022-03-03")])
+```
+
+# Otros indicadores
+
+```{r}
+ClassSizebyRaceEthnicity <- read_excel("data/ClassSizebyRaceEthnicity.xlsx", 
+    skip = 1)
+
+ClassSizebyGenPopulation <- read_excel("data/ClassSizebyGenPopulation.xlsx", 
+    skip = 1)
+```
+
+Seleccionamos los distritos estudiados
+
+```{r}
+ClassSizebyRaceEthnicity <- ClassSizebyRaceEthnicity %>% filter(`District Code` %in% selected_districts$Code)
+ClassSizebyGenPopulation <- ClassSizebyGenPopulation %>% filter(`District Code` %in% selected_districts$Code)
+```
+
+
