@@ -318,7 +318,7 @@ ClassSizebyRaceEthnicity %>%
   geom_point(aes(color = Week), position = position_jitterdodge(jitter.width = 0.2), alpha = 0.4) +
   geom_boxplot(outliers = FALSE, alpha = 0.4) +
   stat_summary(aes(color = Week), fun.y="mean", shape=23, position = position_jitterdodge(jitter.width = 0)) +
-  scale_y_continuous(breaks=seq(-3,6,1), limits = c(-2,6)) +
+  scale_y_continuous(breaks=seq(-3,6,1), limits = c(-3,6)) +
   scale_x_discrete(labels=c("african_scale" = "Porcentaje\nNegros",
                             "asian_scale" = "Porcentaje\nAsiáticos",
                             "hispanic_scale" = "Porcentaje\nHispanos",
