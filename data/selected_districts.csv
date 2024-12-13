@@ -1,4 +1,4 @@
-Name;Code;Week
+Name;Code;Week_lifted
 Andover;00090000;2
 Belmont;00260000;2
 Boston;00350000;4
@@ -7,7 +7,7 @@ Brookline;00460000;3
 Burlington;00480000;1
 Cambridge;00490000;3
 Canton;00500000;1
-Carlisle;00510000;2
+Carlisle;00510000;1
 Chelsea;00570000;4
 Cohasset;00650000;1
 Concord;00670000;2
@@ -64,7 +64,7 @@ Woburn;03470000;1
 Wrentham;03500000;1
 Acton-Boxborough;06000000;1
 Ayer Shirley School District;06160000;2
-Concord-Carlisle;06400000;1
+Concord-Carlisle;06400000;2
 Dover-Sherborn;06550000;1
 Groton-Dunstable;06730000;1
 King Philip;06900000;1

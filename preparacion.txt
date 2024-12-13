@@ -1,0 +1,136 @@
+# Preparación de los datos
+
+```{r}
+df_stu <- df %>% 
+  select(Code,Students,Date) %>%
+  pivot_wider(names_from = Code,values_from = Students) %>%
+  arrange(Date)
+
+for(f in 2:nrow(df_stu)){
+  if(df_stu$Date[f] - df_stu$Date[f-1] >= 14){
+    sem_imp <- cbind(Date = df_stu$Date[f] - 7,df_stu[df_stu$Date == df_stu$Date[f],2:73] / 2)
+    df_stu[df_stu$Date == df_stu$Date[f],2:73] <- df_stu[df_stu$Date == df_stu$Date[f],2:73] / 2
+    df_stu <- rbind(df_stu,sem_imp)
+  }
+}
+
+df_stu <- df_stu %>% arrange(Date)
+
+fecha <- df_stu$Date
+
+df_stu <- as.data.frame(apply(df_stu %>% select(-Date),2,function(x){
+  for(f in 2:length(x)){
+    if(x[f] > 1 & x[f-1] == 0){
+      x[f-1] <- x[f]/2
+      x[f] <- x[f]/2
+    }
+  }
+  return(x)
+}))
+
+df_stu <- cbind(Date = fecha, df_stu)
+
+df_stu <- df_stu %>% arrange(Date)
+
+df_stu_smooth <- as.data.frame(apply(df_stu %>% select(-Date), 2, function(x){rollapply(floor(x),3,mean,align='center',fill=NA, partial = TRUE)}))
+df_stu_smooth <- cbind(df_stu_smooth,Date = df_stu$Date)
+df_stu_smooth <- df_stu_smooth %>% 
+  pivot_longer(-73,names_to = "Code",values_to = "Students") %>% 
+  filter(!is.na(Students))
+df_stu_smooth$Students <- floor(df_stu_smooth$Students)
+
+sum(df_stu_smooth$Students[df_stu_smooth$Date >= as.Date("2022-03-03")])
+```
+
+```{r}
+df_staff <- df %>% 
+  select(Code,Staff,Date) %>%
+  pivot_wider(names_from = Code,values_from = Staff) %>% 
+  arrange(Date)
+
+
+for(f in 2:nrow(df_staff)){
+  if(df_staff$Date[f] - df_staff$Date[f-1] >= 14){
+    sem_imp <- cbind(Date = df_staff$Date[f] - 7,df_staff[df_staff$Date == df_staff$Date[f],2:73] / 2)
+    df_staff[df_staff$Date == df_staff$Date[f],2:73] <- df_staff[df_staff$Date == df_staff$Date[f],2:73] / 2
+    df_staff <- rbind(df_staff,sem_imp)
+  }
+}
+
+df_staff <- df_staff %>% arrange(Date)
+
+fecha <- df_staff$Date
+
+df_staff <- as.data.frame(apply(df_staff %>% select(-Date),2,function(x){
+  for(f in 2:length(x)){
+    if(x[f] > 1 & x[f-1] == 0){
+      x[f-1] <- x[f]/2
+      x[f] <- x[f]/2
+    }
+  }
+  return(x)
+}))
+
+df_staff <- cbind(Date = fecha, df_staff)
+df_staff <- df_staff %>% arrange(Date)
+
+df_staff_smooth <- as.data.frame(apply(df_staff %>% select(-Date), 2, function(x){rollapply(floor(x),3,mean,align='center',fill=NA, partial = TRUE)}))
+df_staff_smooth <- cbind(df_staff_smooth,Date = df_staff$Date)
+df_staff_smooth <- df_staff_smooth %>% 
+  pivot_longer(-73,names_to = "Code",values_to = "Staff") %>% 
+  filter(!is.na(Staff))
+df_staff_smooth$Staff <- round(df_staff_smooth$Staff)
+
+sum(df_staff_smooth$Staff[df_staff_smooth$Date >= as.Date("2022-03-03")])
+```
+
+```{r}
+sum(df_staff_smooth$Staff[df_staff_smooth$Date >= as.Date("2022-03-03")]) + sum(df_stu_smooth$Students[df_stu_smooth$Date >= as.Date("2022-03-03")])
+```
+
+```{r}
+df_smooth <- left_join(df_staff_smooth,df_stu_smooth,by = c("Code","Date")) %>% 
+  mutate(Total = Staff + Students)
+
+df_smooth
+```
+
+```{r}
+df_smooth <- left_join(df_smooth,selected_districts %>% select(-Name))
+df_smooth
+```
+
+```{r}
+ClassSizebyRaceEthnicity <- read_excel("data/ClassSizebyRaceEthnicity.xlsx", 
+    skip = 1)
+
+glimpse(ClassSizebyRaceEthnicity)
+
+ClassSizebyRaceEthnicity[,3:12] <- apply(ClassSizebyRaceEthnicity[,3:12], 2, function(x){as.numeric(str_remove(x,","))})
+ClassSizebyRaceEthnicity <- ClassSizebyRaceEthnicity[,1:9]
+glimpse(ClassSizebyRaceEthnicity)
+```
+
+```{r}
+df_smooth <- df_smooth %>% left_join(ClassSizebyRaceEthnicity %>% select(`District Code`,`Number of Students`), by = c("Code"="District Code"))
+```
+
+
+```{r}
+df_smooth_grouped <- df_smooth %>% 
+  group_by(Week,Date) %>% 
+  summarise(Staff = sum(Staff), Students = sum(Students), Total = sum(Total), `Number of Students` = sum(`Number of Students`)) %>% 
+  mutate(Students1000 = Students / `Number of Students` * 1000)
+
+df_smooth_grouped
+```
+
+```{r}
+df_smooth_grouped %>% 
+  ggplot(aes(x = Date, y = Students1000, color = Week)) +
+  geom_point() +
+  geom_line() +
+  #scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(breaks=seq(0,35,5), expand = c(0.01, 0)) +
+  theme_tfg 
+```
