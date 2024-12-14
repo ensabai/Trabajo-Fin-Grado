@@ -106,7 +106,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(zoo)</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gt)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gtsummary)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gtsummary)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggpubr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>theme_tfg <span class="ot">&lt;-</span> <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
@@ -203,23 +204,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="selección-de-los-distritos-escolares" class="level1">
 <h1>Selección de los distritos escolares</h1>
+<p>Inicialmente, se obtiene que 400 distritos escolares han reportado casos de COVID-19 a DESE. Sin embargo, para el estudio se han excluido los distritos metropolitanos, vocacionales y técnicos y se ha restringido a los distritos escolares incluidos en Boston-Newton-Cambridge New England City y Town Area (NECTA), resultando en un total de 79 distritos. Adicionalmente, se han excluido 7 distritos escolares debido a la inconsistencia de los datos enviados.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>selected_districts <span class="ot">&lt;-</span> <span class="fu">read_delim</span>(<span class="st">"data/selected_districts.csv"</span>, </span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">delim =</span> <span class="st">";"</span>, <span class="at">escape_double =</span> <span class="cn">FALSE</span>, <span class="at">trim_ws =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Rows: 72 Columns: 3
+<pre><code>Rows: 79 Columns: 4
 ── Column specification ────────────────────────────────────────────────────────
 Delimiter: ";"
 chr (2): Name, Code
-dbl (1): Week_lifted
+dbl (2): Week_lifted, Neighboring
 
 ℹ Use `spec()` to retrieve the full column specification for this data.
 ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>selected_districts<span class="sc">$</span>Week_lifted <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(selected_districts<span class="sc">$</span>Week_lifted)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>mapa <span class="ot">&lt;-</span> sf<span class="sc">::</span><span class="fu">st_read</span>(<span class="st">"data/schooldistricts/schooldistricts_poly.shp"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>selected_districts<span class="sc">$</span>Week_lifted <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(selected_districts<span class="sc">$</span>Week_lifted)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>mapa_eeuu <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(maps<span class="sc">::</span><span class="fu">map</span>(<span class="st">"state"</span>,<span class="at">fill =</span> <span class="cn">TRUE</span>, <span class="at">plot =</span> <span class="cn">FALSE</span>))</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>mapa <span class="ot">&lt;-</span> sf<span class="sc">::</span><span class="fu">st_read</span>(<span class="st">"data/schooldistricts/schooldistricts_poly.shp"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `SCHOOLDISTRICTS_POLY' from data source 
   `D:\Documentos\TFG-Mascarillas\Trabajo-Fin-Grado\data\schooldistricts\SCHOOLDISTRICTS_POLY.shp' 
@@ -230,14 +233,27 @@ Dimension:     XY
 Bounding box:  xmin: 33863.73 ymin: 777606.4 xmax: 330810.2 ymax: 959743
 Projected CRS: NAD83 / Massachusetts Mainland</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>mapa <span class="sc">%&gt;%</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(selected_districts, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"ORG8CODE"</span><span class="ot">=</span><span class="st">"Code"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">fill =</span> Week_lifted)) <span class="sc">+</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>() <span class="sc">+</span></span>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>mapa <span class="ot">&lt;-</span> mapa <span class="sc">%&gt;%</span> <span class="fu">select</span>(ORG8CODE,geometry)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>mapa <span class="ot">&lt;-</span> mapa <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(selected_districts <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>Name), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"ORG8CODE"</span><span class="ot">=</span><span class="st">"Code"</span>))</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>mapa<span class="sc">$</span>Neighboring[<span class="fu">is.na</span>(mapa<span class="sc">$</span>Neighboring)] <span class="ot">&lt;-</span> <span class="dv">4</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>mapa<span class="sc">$</span>Neighboring <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(mapa<span class="sc">$</span>Neighboring)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>selected_districts<span class="sc">$</span>Neighboring <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(selected_districts<span class="sc">$</span>Neighboring)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> mapa_eeuu, <span class="at">fill =</span> <span class="st">"#f2f2f2"</span>) <span class="sc">+</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> mapa, <span class="fu">aes</span>(<span class="at">fill =</span> Neighboring)) <span class="sc">+</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_sf_coordinates</span>(<span class="at">data =</span> mapa <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Week_lifted <span class="sc">==</span> <span class="sc">-</span><span class="dv">1</span>)) <span class="sc">+</span></span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>),</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>                    <span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#fcfccf"</span>,<span class="st">"#5fbaa5"</span>,<span class="st">"#53749f"</span>,<span class="st">"#423645"</span>),</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>                    <span class="at">na.value =</span> <span class="st">"lightgrey"</span>) <span class="sc">+</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>                    <span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#040613"</span>,<span class="st">"#3f4b95"</span>,<span class="st">"#62a9c7"</span>,<span class="st">"#d9d9d9"</span>),</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>                    <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Boston/Chelsea</span><span class="sc">\n</span><span class="st">(n=2)"</span>,<span class="st">"Adyacentes</span><span class="sc">\n</span><span class="st">(n=13)"</span>,<span class="st">"Incluidos en NECTA Division</span><span class="sc">\n</span><span class="st">(n=64)"</span>,<span class="st">"No Incluidos en NECTA Division</span><span class="sc">\n</span><span class="st">(n=211)"</span>)) <span class="sc">+</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Distritos Escolares de Massachusetts"</span>, <span class="at">fill =</span> <span class="st">"Categoría</span><span class="sc">\n</span><span class="st">Distrito</span><span class="sc">\n</span><span class="st">Escolar</span><span class="sc">\n</span><span class="st">(N = 290)"</span>) <span class="sc">+</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_sf</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">73.4</span>,<span class="sc">-</span><span class="dv">70</span>), <span class="at">ylim =</span> <span class="fu">c</span>(<span class="fl">41.25</span>,<span class="fl">42.85</span>)) <span class="sc">+</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>,</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>        <span class="at">legend.title =</span> <span class="fu">element_text</span>(<span class="at">face=</span><span class="st">"bold"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -247,86 +263,108 @@ Projected CRS: NAD83 / Massachusetts Mainland</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">inner_join</span>(df,selected_districts <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>Name))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> mapa_eeuu, <span class="at">fill =</span> <span class="st">"#f2f2f2"</span>) <span class="sc">+</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> mapa <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(Week_lifted) <span class="sc">&amp;</span> Week_lifted <span class="sc">!=</span> <span class="sc">-</span><span class="dv">1</span>), <span class="fu">aes</span>(<span class="at">fill =</span> Week_lifted)) <span class="sc">+</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> mapa <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Week_lifted <span class="sc">==</span> <span class="sc">-</span><span class="dv">1</span>), <span class="at">fill =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_sf_coordinates</span>(<span class="at">data =</span> mapa <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Week_lifted <span class="sc">==</span> <span class="sc">-</span><span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>),</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>                    <span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#fcfccf"</span>,<span class="st">"#5fbaa5"</span>,<span class="st">"#53749f"</span>,<span class="st">"#423645"</span>),</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>                    <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"03-Mar-22</span><span class="sc">\n</span><span class="st">(n=46)"</span>,<span class="st">"10-Mar-22</span><span class="sc">\n</span><span class="st">(n=17)"</span>,<span class="st">"17-Mar-22</span><span class="sc">\n</span><span class="st">(n=7)"</span>,<span class="st">"Mantienen</span><span class="sc">\n</span><span class="st">(n=2)"</span>)) <span class="sc">+</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Distritos Escolares por la Semana en el que se Eliminó</span><span class="sc">\n</span><span class="st">la Restricción de las Mascarillas"</span>, <span class="at">fill =</span> <span class="st">"Semana en el que la Restricción</span><span class="sc">\n</span><span class="st">de las Mascarillas fue Eliminada"</span>) <span class="sc">+</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_sf</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">71.7</span>,<span class="sc">-</span><span class="fl">70.6</span>), <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">42</span>,<span class="fl">42.7</span>)) <span class="sc">+</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>,</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>        <span class="at">legend.title =</span> <span class="fu">element_text</span>(<span class="at">face=</span><span class="st">"bold"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="main_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">inner_join</span>(df,selected_districts <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Week_lifted <span class="sc">!=</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>Name))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Joining with `by = join_by(Code)`</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">unique</span>(df<span class="sc">$</span>Name))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">unique</span>(df<span class="sc">$</span>Name))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 72</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span>(Date <span class="sc">&gt;=</span> <span class="fu">as.Date</span>(<span class="st">"2022-06-02"</span>) <span class="sc">&amp;</span> Name <span class="sc">==</span> <span class="st">"Brookline"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span>(Date <span class="sc">&gt;=</span> <span class="fu">as.Date</span>(<span class="st">"2022-06-02"</span>) <span class="sc">&amp;</span> Name <span class="sc">==</span> <span class="st">"Brookline"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Porcentaje de casos pre-Omicron, durante la ola Omicron BA.1, y después de la eliminación de la restricción de la mascarilla.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>df_tabla <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">All =</span> Students <span class="sc">+</span> Staff,</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">Week =</span> <span class="fu">round</span>(<span class="fu">as.numeric</span>((Date <span class="sc">-</span> <span class="fu">as.Date</span>(<span class="st">"2021-09-16"</span>))<span class="sc">/</span><span class="dv">7</span><span class="sc">+</span><span class="dv">1</span>)),</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">Group_week =</span> <span class="fu">case_when</span>(Week <span class="sc">&lt;=</span> <span class="dv">10</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>                                Week <span class="sc">&gt;=</span> <span class="dv">11</span> <span class="sc">&amp;</span> Week <span class="sc">&lt;=</span> <span class="dv">25</span> <span class="sc">~</span> <span class="dv">2</span>,</span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>                                Week <span class="sc">&gt;=</span> <span class="dv">26</span> <span class="sc">~</span> <span class="dv">3</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(PT,PPT,PPR,Date,Name,Week)) <span class="sc">%&gt;%</span> </span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="fu">c</span>(Students,Staff,All), <span class="at">names_to =</span> <span class="st">"names"</span>, <span class="at">values_to =</span> <span class="st">"values"</span>)</span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>df_tabla_aux <span class="ot">&lt;-</span> df_tabla</span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>df_tabla_aux <span class="ot">&lt;-</span> df_tabla_aux <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">Week_lifted =</span> <span class="st">"All"</span>)</span>
-<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>df_tabla <span class="ot">&lt;-</span> <span class="fu">rbind</span>(df_tabla, df_tabla_aux)</span>
-<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>n_districts <span class="ot">&lt;-</span> df_tabla <span class="sc">%&gt;%</span> </span>
-<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(Week_lifted) <span class="sc">%&gt;%</span> </span>
-<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">length</span>(<span class="fu">unique</span>(Code)))</span>
-<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>df_tabla <span class="ot">&lt;-</span> df_tabla <span class="sc">%&gt;%</span></span>
-<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(Week_lifted, Group_week, names) <span class="sc">%&gt;%</span></span>
-<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">values =</span> <span class="fu">sum</span>(values)) <span class="sc">%&gt;%</span></span>
-<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(n_districts) <span class="sc">%&gt;%</span> </span>
-<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Week_lifted =</span> <span class="fu">case_when</span>(Week_lifted <span class="sc">==</span> <span class="st">"All"</span> <span class="sc">~</span> <span class="st">"ALL"</span>,</span>
-<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>                                 Week_lifted <span class="sc">==</span> <span class="dv">4</span> <span class="sc">~</span> <span class="st">"Did not lift"</span>,</span>
-<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a>                                 Week_lifted <span class="sc">==</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"17-Mar-22"</span>,</span>
-<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a>                                 Week_lifted <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"10-Mar-22"</span>,</span>
-<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>                                 Week_lifted <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"03-Mar-22"</span></span>
-<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a>                                 ),</span>
-<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a>         <span class="at">Group_week =</span> <span class="fu">case_when</span>(Group_week <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"Pre-Omicron (Weeks 1-10, n= 10 weeks)"</span>,</span>
-<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a>                                Group_week <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"Omicron BA.1 (Weeks 11-25, n= 15 weeks)"</span>,</span>
-<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a>                                Group_week <span class="sc">==</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"Post-Lifting/Omicron BA.2+ (Weeks 26-40, n=15 weeks)"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> Group_week, <span class="at">values_from =</span> values)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>df_tabla <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">All =</span> Students <span class="sc">+</span> Staff,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">Week =</span> <span class="fu">round</span>(<span class="fu">as.numeric</span>((Date <span class="sc">-</span> <span class="fu">as.Date</span>(<span class="st">"2021-09-16"</span>))<span class="sc">/</span><span class="dv">7</span><span class="sc">+</span><span class="dv">1</span>)),</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">Group_week =</span> <span class="fu">case_when</span>(Week <span class="sc">&lt;=</span> <span class="dv">10</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>                                Week <span class="sc">&gt;=</span> <span class="dv">11</span> <span class="sc">&amp;</span> Week <span class="sc">&lt;=</span> <span class="dv">25</span> <span class="sc">~</span> <span class="dv">2</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>                                Week <span class="sc">&gt;=</span> <span class="dv">26</span> <span class="sc">~</span> <span class="dv">3</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(PT,PPT,PPR,Date,Name,Week)) <span class="sc">%&gt;%</span> </span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="fu">c</span>(Students,Staff,All), <span class="at">names_to =</span> <span class="st">"names"</span>, <span class="at">values_to =</span> <span class="st">"values"</span>)</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>df_tabla_aux <span class="ot">&lt;-</span> df_tabla</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>df_tabla_aux <span class="ot">&lt;-</span> df_tabla_aux <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">Week_lifted =</span> <span class="st">"All"</span>)</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>df_tabla <span class="ot">&lt;-</span> <span class="fu">rbind</span>(df_tabla, df_tabla_aux)</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>n_districts <span class="ot">&lt;-</span> df_tabla <span class="sc">%&gt;%</span> </span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(Week_lifted) <span class="sc">%&gt;%</span> </span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">length</span>(<span class="fu">unique</span>(Code)))</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>df_tabla <span class="ot">&lt;-</span> df_tabla <span class="sc">%&gt;%</span></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(Week_lifted, Group_week, names) <span class="sc">%&gt;%</span></span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">values =</span> <span class="fu">sum</span>(values)) <span class="sc">%&gt;%</span></span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(n_districts) <span class="sc">%&gt;%</span> </span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Week_lifted =</span> <span class="fu">case_when</span>(Week_lifted <span class="sc">==</span> <span class="st">"All"</span> <span class="sc">~</span> <span class="st">"ALL"</span>,</span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>                                 Week_lifted <span class="sc">==</span> <span class="dv">4</span> <span class="sc">~</span> <span class="st">"Did not lift"</span>,</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>                                 Week_lifted <span class="sc">==</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"17-Mar-22"</span>,</span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>                                 Week_lifted <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"10-Mar-22"</span>,</span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>                                 Week_lifted <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"03-Mar-22"</span></span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>                                 ),</span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>         <span class="at">Group_week =</span> <span class="fu">case_when</span>(Group_week <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"Pre-Omicron (Weeks 1-10, n= 10 weeks)"</span>,</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>                                Group_week <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"Omicron BA.1 (Weeks 11-25, n= 15 weeks)"</span>,</span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a>                                Group_week <span class="sc">==</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"Post-Lifting/Omicron BA.2+ (Weeks 26-40, n=15 weeks)"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> Group_week, <span class="at">values_from =</span> values)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>`summarise()` has grouped output by 'Week_lifted', 'Group_week'. You can
 override using the `.groups` argument.
 Joining with `by = join_by(Week_lifted)`</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(df_tabla)[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="st">"Week Masking Requirement Lifted"</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(df_tabla)[<span class="dv">3</span>] <span class="ot">&lt;-</span> <span class="st">"n Districts"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(df_tabla)[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="st">"Week Masking Requirement Lifted"</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(df_tabla)[<span class="dv">3</span>] <span class="ot">&lt;-</span> <span class="st">"n Districts"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>df_tabla <span class="sc">%&gt;%</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gt</span>(<span class="at">groupname_col =</span> <span class="st">"names"</span>,</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">caption =</span> <span class="st">"Tabla 1. Percentage of cases occurring pre-Omicron, during the Omicron BA.1 wave, and after masking requirements were lifted "</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summary_rows</span>(</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">groups =</span> <span class="cn">TRUE</span></span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>df_tabla <span class="sc">%&gt;%</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gt</span>(<span class="at">groupname_col =</span> <span class="st">"names"</span>,</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">caption =</span> <span class="st">"Tabla 1. Percentage of cases occurring pre-Omicron, during the Omicron BA.1 wave, and after masking requirements were lifted "</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summary_rows</span>(</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">groups =</span> <span class="cn">TRUE</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div id="qgkvbfeceg" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#qgkvbfeceg table {
+<div id="optntyodcr" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#optntyodcr table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#qgkvbfeceg thead, #qgkvbfeceg tbody, #qgkvbfeceg tfoot, #qgkvbfeceg tr, #qgkvbfeceg td, #qgkvbfeceg th {
+#optntyodcr thead, #optntyodcr tbody, #optntyodcr tfoot, #optntyodcr tr, #optntyodcr td, #optntyodcr th {
   border-style: none;
 }
 
-#qgkvbfeceg p {
+#optntyodcr p {
   margin: 0;
   padding: 0;
 }
 
-#qgkvbfeceg .gt_table {
+#optntyodcr .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -352,12 +390,12 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   border-left-color: #D3D3D3;
 }
 
-#qgkvbfeceg .gt_caption {
+#optntyodcr .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#qgkvbfeceg .gt_title {
+#optntyodcr .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -369,7 +407,7 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   border-bottom-width: 0;
 }
 
-#qgkvbfeceg .gt_subtitle {
+#optntyodcr .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -381,7 +419,7 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   border-top-width: 0;
 }
 
-#qgkvbfeceg .gt_heading {
+#optntyodcr .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -393,13 +431,13 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#qgkvbfeceg .gt_bottom_border {
+#optntyodcr .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#qgkvbfeceg .gt_col_headings {
+#optntyodcr .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -414,7 +452,7 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#qgkvbfeceg .gt_col_heading {
+#optntyodcr .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -434,7 +472,7 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   overflow-x: hidden;
 }
 
-#qgkvbfeceg .gt_column_spanner_outer {
+#optntyodcr .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -446,15 +484,15 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   padding-right: 4px;
 }
 
-#qgkvbfeceg .gt_column_spanner_outer:first-child {
+#optntyodcr .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#qgkvbfeceg .gt_column_spanner_outer:last-child {
+#optntyodcr .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#qgkvbfeceg .gt_column_spanner {
+#optntyodcr .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -466,11 +504,11 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   width: 100%;
 }
 
-#qgkvbfeceg .gt_spanner_row {
+#optntyodcr .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#qgkvbfeceg .gt_group_heading {
+#optntyodcr .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -496,7 +534,7 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   text-align: left;
 }
 
-#qgkvbfeceg .gt_empty_group_heading {
+#optntyodcr .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -511,15 +549,15 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   vertical-align: middle;
 }
 
-#qgkvbfeceg .gt_from_md > :first-child {
+#optntyodcr .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#qgkvbfeceg .gt_from_md > :last-child {
+#optntyodcr .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#qgkvbfeceg .gt_row {
+#optntyodcr .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -538,7 +576,7 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   overflow-x: hidden;
 }
 
-#qgkvbfeceg .gt_stub {
+#optntyodcr .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -551,7 +589,7 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   padding-right: 5px;
 }
 
-#qgkvbfeceg .gt_stub_row_group {
+#optntyodcr .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -565,15 +603,15 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   vertical-align: top;
 }
 
-#qgkvbfeceg .gt_row_group_first td {
+#optntyodcr .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#qgkvbfeceg .gt_row_group_first th {
+#optntyodcr .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#qgkvbfeceg .gt_summary_row {
+#optntyodcr .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -583,16 +621,16 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   padding-right: 5px;
 }
 
-#qgkvbfeceg .gt_first_summary_row {
+#optntyodcr .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#qgkvbfeceg .gt_first_summary_row.thick {
+#optntyodcr .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#qgkvbfeceg .gt_last_summary_row {
+#optntyodcr .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -602,7 +640,7 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#qgkvbfeceg .gt_grand_summary_row {
+#optntyodcr .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -612,7 +650,7 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   padding-right: 5px;
 }
 
-#qgkvbfeceg .gt_first_grand_summary_row {
+#optntyodcr .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -622,7 +660,7 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   border-top-color: #D3D3D3;
 }
 
-#qgkvbfeceg .gt_last_grand_summary_row_top {
+#optntyodcr .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -632,11 +670,11 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#qgkvbfeceg .gt_striped {
+#optntyodcr .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#qgkvbfeceg .gt_table_body {
+#optntyodcr .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -645,7 +683,7 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#qgkvbfeceg .gt_footnotes {
+#optntyodcr .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -659,7 +697,7 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#qgkvbfeceg .gt_footnote {
+#optntyodcr .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -668,7 +706,7 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   padding-right: 5px;
 }
 
-#qgkvbfeceg .gt_sourcenotes {
+#optntyodcr .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -682,7 +720,7 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#qgkvbfeceg .gt_sourcenote {
+#optntyodcr .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -690,72 +728,72 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
   padding-right: 5px;
 }
 
-#qgkvbfeceg .gt_left {
+#optntyodcr .gt_left {
   text-align: left;
 }
 
-#qgkvbfeceg .gt_center {
+#optntyodcr .gt_center {
   text-align: center;
 }
 
-#qgkvbfeceg .gt_right {
+#optntyodcr .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#qgkvbfeceg .gt_font_normal {
+#optntyodcr .gt_font_normal {
   font-weight: normal;
 }
 
-#qgkvbfeceg .gt_font_bold {
+#optntyodcr .gt_font_bold {
   font-weight: bold;
 }
 
-#qgkvbfeceg .gt_font_italic {
+#optntyodcr .gt_font_italic {
   font-style: italic;
 }
 
-#qgkvbfeceg .gt_super {
+#optntyodcr .gt_super {
   font-size: 65%;
 }
 
-#qgkvbfeceg .gt_footnote_marks {
+#optntyodcr .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#qgkvbfeceg .gt_asterisk {
+#optntyodcr .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#qgkvbfeceg .gt_indent_1 {
+#optntyodcr .gt_indent_1 {
   text-indent: 5px;
 }
 
-#qgkvbfeceg .gt_indent_2 {
+#optntyodcr .gt_indent_2 {
   text-indent: 10px;
 }
 
-#qgkvbfeceg .gt_indent_3 {
+#optntyodcr .gt_indent_3 {
   text-indent: 15px;
 }
 
-#qgkvbfeceg .gt_indent_4 {
+#optntyodcr .gt_indent_4 {
   text-indent: 20px;
 }
 
-#qgkvbfeceg .gt_indent_5 {
+#optntyodcr .gt_indent_5 {
   text-indent: 25px;
 }
 
-#qgkvbfeceg .katex-display {
+#optntyodcr .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#qgkvbfeceg div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#optntyodcr div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -896,11 +934,11 @@ Joining with `by = join_by(Week_lifted)`</code></pre>
 <section id="otros-indicadores" class="level1">
 <h1>Otros indicadores</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/enrollmentbyracegender.xlsx"</span>, </span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">skip =</span> <span class="dv">1</span>)</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender[,<span class="dv">3</span><span class="sc">:</span><span class="dv">12</span>] <span class="ot">&lt;-</span> <span class="fu">apply</span>(enrollmentbyracegender[,<span class="dv">3</span><span class="sc">:</span><span class="dv">12</span>], <span class="dv">2</span>, <span class="cf">function</span>(x){<span class="fu">as.numeric</span>(<span class="fu">str_remove</span>(x,<span class="st">","</span>))})</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(enrollmentbyracegender)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/enrollmentbyracegender.xlsx"</span>, </span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">skip =</span> <span class="dv">1</span>)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender[,<span class="dv">3</span><span class="sc">:</span><span class="dv">12</span>] <span class="ot">&lt;-</span> <span class="fu">apply</span>(enrollmentbyracegender[,<span class="dv">3</span><span class="sc">:</span><span class="dv">12</span>], <span class="dv">2</span>, <span class="cf">function</span>(x){<span class="fu">as.numeric</span>(<span class="fu">str_remove</span>(x,<span class="st">","</span>))})</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(enrollmentbyracegender)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Rows: 401
 Columns: 12
@@ -917,31 +955,31 @@ $ Males                               &lt;dbl&gt; 46.1, 50.9, 52.0, 51.4, 53.0, 
 $ Females                             &lt;dbl&gt; 53.9, 49.0, 48.0, 48.4, 47.0, 46.1…
 $ `Non-Binary`                        &lt;dbl&gt; 0.0, 0.1, 0.0, 0.2, 0.0, 0.4, 0.1,…</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender <span class="ot">&lt;-</span> enrollmentbyracegender <span class="sc">%&gt;%</span> <span class="fu">inner_join</span>(selected_districts <span class="sc">%&gt;%</span> <span class="fu">select</span>(Code,Week_lifted), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"District Code"</span> <span class="ot">=</span> <span class="st">"Code"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender <span class="ot">&lt;-</span> enrollmentbyracegender <span class="sc">%&gt;%</span> <span class="fu">inner_join</span>(selected_districts <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Week_lifted <span class="sc">!=</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">%&gt;%</span> <span class="fu">select</span>(Code,Week_lifted), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"District Code"</span> <span class="ot">=</span> <span class="st">"Code"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender<span class="sc">$</span>african_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(enrollmentbyracegender<span class="sc">$</span><span class="st">`</span><span class="at">African American</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender<span class="sc">$</span>asian_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(enrollmentbyracegender<span class="sc">$</span><span class="st">`</span><span class="at">Asian</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender<span class="sc">$</span>hispanic_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(enrollmentbyracegender<span class="sc">$</span><span class="st">`</span><span class="at">Hispanic</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender<span class="sc">$</span>white_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(enrollmentbyracegender<span class="sc">$</span><span class="st">`</span><span class="at">White</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender <span class="ot">&lt;-</span> enrollmentbyracegender <span class="sc">%&gt;%</span> </span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">`</span><span class="at">District Code</span><span class="st">`</span>,Week_lifted,african_scale,asian_scale,hispanic_scale,white_scale)</span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender <span class="sc">%&gt;%</span> </span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">3</span><span class="sc">:</span><span class="dv">6</span>,<span class="at">names_to =</span> <span class="st">"names"</span>,<span class="at">values_to =</span> <span class="st">"values"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> names, <span class="at">y =</span> values, <span class="at">fill =</span> Week_lifted)) <span class="sc">+</span></span>
-<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">color =</span> <span class="st">"grey"</span>, <span class="at">linetype =</span> <span class="dv">2</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
-<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">color =</span> Week_lifted), <span class="at">position =</span> <span class="fu">position_jitterdodge</span>(<span class="at">jitter.width =</span> <span class="fl">0.2</span>), <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
-<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outliers =</span> <span class="cn">FALSE</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
-<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="fu">aes</span>(<span class="at">color =</span> Week_lifted), <span class="at">fun.y=</span><span class="st">"mean"</span>, <span class="at">shape=</span><span class="dv">23</span>, <span class="at">position =</span> <span class="fu">position_jitterdodge</span>(<span class="at">jitter.width =</span> <span class="dv">0</span>)) <span class="sc">+</span></span>
-<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">breaks=</span><span class="fu">seq</span>(<span class="sc">-</span><span class="dv">3</span>,<span class="dv">6</span>,<span class="dv">1</span>), <span class="at">limits =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">3</span>,<span class="dv">6</span>)) <span class="sc">+</span></span>
-<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">labels=</span><span class="fu">c</span>(<span class="st">"african_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje</span><span class="sc">\n</span><span class="st">Negros"</span>,</span>
-<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"asian_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje</span><span class="sc">\n</span><span class="st">Asiáticos"</span>,</span>
-<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"hispanic_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje</span><span class="sc">\n</span><span class="st">Hispanos"</span>,</span>
-<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"white_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje</span><span class="sc">\n</span><span class="st">Blancos"</span>)) <span class="sc">+</span></span>
-<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Valores Escalados de la Variable"</span>, <span class="at">title =</span> <span class="st">"Distribución de los Estudiantes de Acuerdo a la Raza o Grupo Étnico"</span>) <span class="sc">+</span></span>
-<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>  theme_tfg</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender<span class="sc">$</span>african_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(enrollmentbyracegender<span class="sc">$</span><span class="st">`</span><span class="at">African American</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender<span class="sc">$</span>asian_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(enrollmentbyracegender<span class="sc">$</span><span class="st">`</span><span class="at">Asian</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender<span class="sc">$</span>hispanic_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(enrollmentbyracegender<span class="sc">$</span><span class="st">`</span><span class="at">Hispanic</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender<span class="sc">$</span>white_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(enrollmentbyracegender<span class="sc">$</span><span class="st">`</span><span class="at">White</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender <span class="ot">&lt;-</span> enrollmentbyracegender <span class="sc">%&gt;%</span> </span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">`</span><span class="at">District Code</span><span class="st">`</span>,Week_lifted,african_scale,asian_scale,hispanic_scale,white_scale)</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>enrollmentbyracegender <span class="sc">%&gt;%</span> </span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">3</span><span class="sc">:</span><span class="dv">6</span>,<span class="at">names_to =</span> <span class="st">"names"</span>,<span class="at">values_to =</span> <span class="st">"values"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> names, <span class="at">y =</span> values, <span class="at">fill =</span> Week_lifted)) <span class="sc">+</span></span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">color =</span> <span class="st">"grey"</span>, <span class="at">linetype =</span> <span class="dv">2</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">color =</span> Week_lifted), <span class="at">position =</span> <span class="fu">position_jitterdodge</span>(<span class="at">jitter.width =</span> <span class="fl">0.2</span>), <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outliers =</span> <span class="cn">FALSE</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="fu">aes</span>(<span class="at">color =</span> Week_lifted), <span class="at">fun.y=</span><span class="st">"mean"</span>, <span class="at">shape=</span><span class="dv">23</span>, <span class="at">position =</span> <span class="fu">position_jitterdodge</span>(<span class="at">jitter.width =</span> <span class="dv">0</span>)) <span class="sc">+</span></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">breaks=</span><span class="fu">seq</span>(<span class="sc">-</span><span class="dv">3</span>,<span class="dv">6</span>,<span class="dv">1</span>), <span class="at">limits =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">3</span>,<span class="dv">6</span>)) <span class="sc">+</span></span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">labels=</span><span class="fu">c</span>(<span class="st">"african_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje</span><span class="sc">\n</span><span class="st">Negros"</span>,</span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"asian_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje</span><span class="sc">\n</span><span class="st">Asiáticos"</span>,</span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"hispanic_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje</span><span class="sc">\n</span><span class="st">Hispanos"</span>,</span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"white_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje</span><span class="sc">\n</span><span class="st">Blancos"</span>)) <span class="sc">+</span></span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Valores Escalados de la Variable"</span>, <span class="at">title =</span> <span class="st">"Distribución de los Estudiantes de Acuerdo a la Raza o Grupo Étnico"</span>) <span class="sc">+</span></span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>  theme_tfg</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
 ℹ Please use `linewidth` instead.</code></pre>
@@ -957,21 +995,21 @@ $ `Non-Binary`                        &lt;dbl&gt; 0.0, 0.1, 0.0, 0.2, 0.0, 0.4, 
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="main_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="main_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>selectedpopulations <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/selectedpopulations.xlsx"</span>, </span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">skip =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>selectedpopulations <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/selectedpopulations.xlsx"</span>, </span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">skip =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>New names:
 • `High Needs #` -&gt; `High Needs #...15`
 • `High Needs #` -&gt; `High Needs #...16`</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>selectedpopulations[,<span class="dv">3</span><span class="sc">:</span><span class="dv">18</span>] <span class="ot">&lt;-</span> <span class="fu">apply</span>(selectedpopulations[,<span class="dv">3</span><span class="sc">:</span><span class="dv">18</span>], <span class="dv">2</span>, <span class="cf">function</span>(x){<span class="fu">as.numeric</span>(<span class="fu">str_remove</span>(x,<span class="st">","</span>))})</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(selectedpopulations)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>selectedpopulations[,<span class="dv">3</span><span class="sc">:</span><span class="dv">18</span>] <span class="ot">&lt;-</span> <span class="fu">apply</span>(selectedpopulations[,<span class="dv">3</span><span class="sc">:</span><span class="dv">18</span>], <span class="dv">2</span>, <span class="cf">function</span>(x){<span class="fu">as.numeric</span>(<span class="fu">str_remove</span>(x,<span class="st">","</span>))})</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(selectedpopulations)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Rows: 401
 Columns: 18
@@ -994,12 +1032,12 @@ $ `High Needs #...16`            &lt;dbl&gt; 77.2, 48.8, 75.3, 28.8, 45.7, 25.7,
 $ `Economically Disadvantaged #` &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
 $ `Economically Disadvantaged %` &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>selectedpopulations <span class="ot">&lt;-</span> selectedpopulations <span class="sc">%&gt;%</span> </span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">`</span><span class="at">District Code</span><span class="st">`</span>, <span class="st">`</span><span class="at">English Language Learner %</span><span class="st">`</span>, <span class="st">`</span><span class="at">Students With Disabilities %</span><span class="st">`</span>, <span class="st">`</span><span class="at">Low Income %</span><span class="st">`</span>)</span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>selectedpopulations <span class="ot">&lt;-</span> selectedpopulations <span class="sc">%&gt;%</span> <span class="fu">inner_join</span>(selected_districts <span class="sc">%&gt;%</span> <span class="fu">select</span>(Code,Week_lifted), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"District Code"</span> <span class="ot">=</span> <span class="st">"Code"</span>))</span>
-<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(selectedpopulations)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>selectedpopulations <span class="ot">&lt;-</span> selectedpopulations <span class="sc">%&gt;%</span> </span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">`</span><span class="at">District Code</span><span class="st">`</span>, <span class="st">`</span><span class="at">English Language Learner %</span><span class="st">`</span>, <span class="st">`</span><span class="at">Students With Disabilities %</span><span class="st">`</span>, <span class="st">`</span><span class="at">Low Income %</span><span class="st">`</span>)</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>selectedpopulations <span class="ot">&lt;-</span> selectedpopulations <span class="sc">%&gt;%</span> <span class="fu">inner_join</span>(selected_districts <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Week_lifted <span class="sc">!=</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">%&gt;%</span> <span class="fu">select</span>(Code,Week_lifted), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"District Code"</span> <span class="ot">=</span> <span class="st">"Code"</span>))</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(selectedpopulations)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Rows: 72
 Columns: 5
@@ -1011,42 +1049,42 @@ $ Week_lifted                    &lt;fct&gt; 1, 2, 2, 2, 4, 1, 3, 1, 3, 1, 1, 4,
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>selectedpopulations<span class="sc">$</span>lis_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(selectedpopulations<span class="sc">$</span><span class="st">`</span><span class="at">Low Income %</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>selectedpopulations<span class="sc">$</span>sd_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(selectedpopulations<span class="sc">$</span><span class="st">`</span><span class="at">Students With Disabilities %</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>selectedpopulations<span class="sc">$</span>ell_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(selectedpopulations<span class="sc">$</span><span class="st">`</span><span class="at">English Language Learner %</span><span class="st">`</span>)[,<span class="dv">1</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>selectedpopulations<span class="sc">$</span>lis_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(selectedpopulations<span class="sc">$</span><span class="st">`</span><span class="at">Low Income %</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>selectedpopulations<span class="sc">$</span>sd_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(selectedpopulations<span class="sc">$</span><span class="st">`</span><span class="at">Students With Disabilities %</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>selectedpopulations<span class="sc">$</span>ell_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(selectedpopulations<span class="sc">$</span><span class="st">`</span><span class="at">English Language Learner %</span><span class="st">`</span>)[,<span class="dv">1</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>selectedpopulations <span class="ot">&lt;-</span> selectedpopulations <span class="sc">%&gt;%</span> </span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">`</span><span class="at">District Code</span><span class="st">`</span>,Week_lifted,lis_scale,sd_scale,ell_scale)</span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>selectedpopulations <span class="sc">%&gt;%</span> </span>
-<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">3</span><span class="sc">:</span><span class="dv">5</span>,<span class="at">names_to =</span> <span class="st">"names"</span>,<span class="at">values_to =</span> <span class="st">"values"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> names, <span class="at">y =</span> values, <span class="at">fill =</span> Week_lifted)) <span class="sc">+</span></span>
-<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">color =</span> <span class="st">"grey"</span>, <span class="at">linetype =</span> <span class="dv">2</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
-<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">color =</span> Week_lifted), <span class="at">position =</span> <span class="fu">position_jitterdodge</span>(<span class="at">jitter.width =</span> <span class="fl">0.2</span>), <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
-<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outliers =</span> <span class="cn">FALSE</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
-<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="fu">aes</span>(<span class="at">color =</span> Week_lifted), <span class="at">fun.y=</span><span class="st">"mean"</span>, <span class="at">shape=</span><span class="dv">23</span>, <span class="at">position =</span> <span class="fu">position_jitterdodge</span>(<span class="at">jitter.width =</span> <span class="dv">0</span>))<span class="sc">+</span></span>
-<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">breaks=</span><span class="fu">seq</span>(<span class="sc">-</span><span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">1</span>), <span class="at">limits =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>,<span class="fl">4.5</span>)) <span class="sc">+</span></span>
-<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">limits =</span> <span class="fu">c</span>(<span class="st">"lis_scale"</span>,<span class="st">"sd_scale"</span>,<span class="st">"ell_scale"</span>),</span>
-<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>                   <span class="at">labels=</span><span class="fu">c</span>(<span class="st">"lis_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje de</span><span class="sc">\n</span><span class="st">Estudiantes con</span><span class="sc">\n</span><span class="st">Bajos Ingresos"</span>,</span>
-<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"sd_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje de</span><span class="sc">\n</span><span class="st">Estudiantes con</span><span class="sc">\n</span><span class="st"> Discapacidad"</span>,</span>
-<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"ell_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje de</span><span class="sc">\n</span><span class="st">Estudiantes ELL"</span>)) <span class="sc">+</span></span>
-<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Valores Escalados de la Variable"</span>, <span class="at">title =</span> <span class="st">"Distribución de los Estudiantes en Poblaciones Seleccionadas por DESE"</span>) <span class="sc">+</span></span>
-<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>  theme_tfg</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>selectedpopulations <span class="ot">&lt;-</span> selectedpopulations <span class="sc">%&gt;%</span> </span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">`</span><span class="at">District Code</span><span class="st">`</span>,Week_lifted,lis_scale,sd_scale,ell_scale)</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>selectedpopulations <span class="sc">%&gt;%</span> </span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">3</span><span class="sc">:</span><span class="dv">5</span>,<span class="at">names_to =</span> <span class="st">"names"</span>,<span class="at">values_to =</span> <span class="st">"values"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> names, <span class="at">y =</span> values, <span class="at">fill =</span> Week_lifted)) <span class="sc">+</span></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">color =</span> <span class="st">"grey"</span>, <span class="at">linetype =</span> <span class="dv">2</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">color =</span> Week_lifted), <span class="at">position =</span> <span class="fu">position_jitterdodge</span>(<span class="at">jitter.width =</span> <span class="fl">0.2</span>), <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outliers =</span> <span class="cn">FALSE</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="fu">aes</span>(<span class="at">color =</span> Week_lifted), <span class="at">fun.y=</span><span class="st">"mean"</span>, <span class="at">shape=</span><span class="dv">23</span>, <span class="at">position =</span> <span class="fu">position_jitterdodge</span>(<span class="at">jitter.width =</span> <span class="dv">0</span>))<span class="sc">+</span></span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">breaks=</span><span class="fu">seq</span>(<span class="sc">-</span><span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">1</span>), <span class="at">limits =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>,<span class="fl">4.5</span>)) <span class="sc">+</span></span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">limits =</span> <span class="fu">c</span>(<span class="st">"lis_scale"</span>,<span class="st">"sd_scale"</span>,<span class="st">"ell_scale"</span>),</span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>                   <span class="at">labels=</span><span class="fu">c</span>(<span class="st">"lis_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje de</span><span class="sc">\n</span><span class="st">Estudiantes con</span><span class="sc">\n</span><span class="st">Bajos Ingresos"</span>,</span>
+<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"sd_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje de</span><span class="sc">\n</span><span class="st">Estudiantes con</span><span class="sc">\n</span><span class="st"> Discapacidad"</span>,</span>
+<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"ell_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje de</span><span class="sc">\n</span><span class="st">Estudiantes ELL"</span>)) <span class="sc">+</span></span>
+<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Valores Escalados de la Variable"</span>, <span class="at">title =</span> <span class="st">"Distribución de los Estudiantes en Poblaciones Seleccionadas por DESE"</span>) <span class="sc">+</span></span>
+<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>  theme_tfg</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="main_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="main_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>staffracegender <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/staffracegender.xlsx"</span>, </span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">skip =</span> <span class="dv">1</span>)</span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>staffracegender[,<span class="dv">3</span><span class="sc">:</span><span class="dv">12</span>] <span class="ot">&lt;-</span> <span class="fu">apply</span>(staffracegender[,<span class="dv">3</span><span class="sc">:</span><span class="dv">12</span>], <span class="dv">2</span>, <span class="cf">function</span>(x){<span class="fu">as.numeric</span>(<span class="fu">str_remove</span>(x,<span class="st">","</span>))})</span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(staffracegender)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>staffracegender <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/staffracegender.xlsx"</span>, </span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">skip =</span> <span class="dv">1</span>)</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>staffracegender[,<span class="dv">3</span><span class="sc">:</span><span class="dv">12</span>] <span class="ot">&lt;-</span> <span class="fu">apply</span>(staffracegender[,<span class="dv">3</span><span class="sc">:</span><span class="dv">12</span>], <span class="dv">2</span>, <span class="cf">function</span>(x){<span class="fu">as.numeric</span>(<span class="fu">str_remove</span>(x,<span class="st">","</span>))})</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(staffracegender)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Rows: 401
 Columns: 12
@@ -1063,12 +1101,12 @@ $ `Females (%)`                           &lt;dbl&gt; 78.9, 83.8, 66.3, 86.4, 84
 $ `Males (%)`                             &lt;dbl&gt; 21.1, 15.9, 33.7, 13.6, 15.5, …
 $ `FTE Count`                             &lt;dbl&gt; 194.2, 280.6, 94.9, 785.1, 121…</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>staffracegender <span class="ot">&lt;-</span> staffracegender <span class="sc">%&gt;%</span> </span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">`</span><span class="at">District/School Code</span><span class="st">`</span>, <span class="st">`</span><span class="at">African American (%)</span><span class="st">`</span>, <span class="st">`</span><span class="at">Asian (%)</span><span class="st">`</span>, <span class="st">`</span><span class="at">Hispanic (%)</span><span class="st">`</span>, <span class="st">`</span><span class="at">White (%)</span><span class="st">`</span>)</span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>staffracegender <span class="ot">&lt;-</span> staffracegender <span class="sc">%&gt;%</span> <span class="fu">inner_join</span>(selected_districts <span class="sc">%&gt;%</span> <span class="fu">select</span>(Code,Week_lifted), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"District/School Code"</span> <span class="ot">=</span> <span class="st">"Code"</span>))</span>
-<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(staffracegender)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>staffracegender <span class="ot">&lt;-</span> staffracegender <span class="sc">%&gt;%</span> </span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">`</span><span class="at">District/School Code</span><span class="st">`</span>, <span class="st">`</span><span class="at">African American (%)</span><span class="st">`</span>, <span class="st">`</span><span class="at">Asian (%)</span><span class="st">`</span>, <span class="st">`</span><span class="at">Hispanic (%)</span><span class="st">`</span>, <span class="st">`</span><span class="at">White (%)</span><span class="st">`</span>)</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>staffracegender <span class="ot">&lt;-</span> staffracegender <span class="sc">%&gt;%</span> <span class="fu">inner_join</span>(selected_districts <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Week_lifted <span class="sc">!=</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">%&gt;%</span> <span class="fu">select</span>(Code,Week_lifted), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"District/School Code"</span> <span class="ot">=</span> <span class="st">"Code"</span>))</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(staffracegender)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Rows: 72
 Columns: 6
@@ -1081,28 +1119,28 @@ $ Week_lifted            &lt;fct&gt; 1, 2, 2, 2, 4, 1, 3, 1, 3, 1, 1, 4, 1, 2, 2
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>staffracegender<span class="sc">$</span>african_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(staffracegender<span class="sc">$</span><span class="st">`</span><span class="at">African American (%)</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>staffracegender<span class="sc">$</span>asian_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(staffracegender<span class="sc">$</span><span class="st">`</span><span class="at">Asian (%)</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>staffracegender<span class="sc">$</span>hispanic_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(staffracegender<span class="sc">$</span><span class="st">`</span><span class="at">Hispanic (%)</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
-<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>staffracegender<span class="sc">$</span>white_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(staffracegender<span class="sc">$</span><span class="st">`</span><span class="at">White (%)</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
-<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>staffracegender <span class="ot">&lt;-</span> staffracegender <span class="sc">%&gt;%</span> </span>
-<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">`</span><span class="at">District/School Code</span><span class="st">`</span>,Week_lifted,african_scale,asian_scale,hispanic_scale,white_scale)</span>
-<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a>staffracegender <span class="sc">%&gt;%</span> </span>
-<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">3</span><span class="sc">:</span><span class="dv">6</span>,<span class="at">names_to =</span> <span class="st">"names"</span>,<span class="at">values_to =</span> <span class="st">"values"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> names, <span class="at">y =</span> values, <span class="at">fill =</span> Week_lifted)) <span class="sc">+</span></span>
-<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">color =</span> <span class="st">"grey"</span>, <span class="at">linetype =</span> <span class="dv">2</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
-<span id="cb40-13"><a href="#cb40-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">color =</span> Week_lifted), <span class="at">position =</span> <span class="fu">position_jitterdodge</span>(<span class="at">jitter.width =</span> <span class="fl">0.2</span>), <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
-<span id="cb40-14"><a href="#cb40-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outliers =</span> <span class="cn">FALSE</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
-<span id="cb40-15"><a href="#cb40-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="fu">aes</span>(<span class="at">color =</span> Week_lifted), <span class="at">fun.y=</span><span class="st">"mean"</span>, <span class="at">shape=</span><span class="dv">23</span>, <span class="at">position =</span> <span class="fu">position_jitterdodge</span>(<span class="at">jitter.width =</span> <span class="dv">0</span>)) <span class="sc">+</span></span>
-<span id="cb40-16"><a href="#cb40-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">breaks=</span><span class="fu">seq</span>(<span class="sc">-</span><span class="dv">5</span>,<span class="dv">7</span>,<span class="dv">1</span>), <span class="at">limits =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">5</span>,<span class="dv">7</span>)) <span class="sc">+</span></span>
-<span id="cb40-17"><a href="#cb40-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">labels=</span><span class="fu">c</span>(<span class="st">"african_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje</span><span class="sc">\n</span><span class="st">Negros"</span>,</span>
-<span id="cb40-18"><a href="#cb40-18" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"asian_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje</span><span class="sc">\n</span><span class="st">Asiáticos"</span>,</span>
-<span id="cb40-19"><a href="#cb40-19" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"hispanic_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje</span><span class="sc">\n</span><span class="st">Hispanos"</span>,</span>
-<span id="cb40-20"><a href="#cb40-20" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"white_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje</span><span class="sc">\n</span><span class="st">Blancos"</span>)) <span class="sc">+</span></span>
-<span id="cb40-21"><a href="#cb40-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Valores Escalados de la Variable"</span>, <span class="at">title =</span> <span class="st">"Distribución del Staff de Acuerdo a la Raza o Grupo Étnico"</span>) <span class="sc">+</span></span>
-<span id="cb40-22"><a href="#cb40-22" aria-hidden="true" tabindex="-1"></a>  theme_tfg</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>staffracegender<span class="sc">$</span>african_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(staffracegender<span class="sc">$</span><span class="st">`</span><span class="at">African American (%)</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>staffracegender<span class="sc">$</span>asian_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(staffracegender<span class="sc">$</span><span class="st">`</span><span class="at">Asian (%)</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>staffracegender<span class="sc">$</span>hispanic_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(staffracegender<span class="sc">$</span><span class="st">`</span><span class="at">Hispanic (%)</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>staffracegender<span class="sc">$</span>white_scale <span class="ot">&lt;-</span> <span class="fu">scale</span>(staffracegender<span class="sc">$</span><span class="st">`</span><span class="at">White (%)</span><span class="st">`</span>)[,<span class="dv">1</span>]</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>staffracegender <span class="ot">&lt;-</span> staffracegender <span class="sc">%&gt;%</span> </span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">`</span><span class="at">District/School Code</span><span class="st">`</span>,Week_lifted,african_scale,asian_scale,hispanic_scale,white_scale)</span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>staffracegender <span class="sc">%&gt;%</span> </span>
+<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">3</span><span class="sc">:</span><span class="dv">6</span>,<span class="at">names_to =</span> <span class="st">"names"</span>,<span class="at">values_to =</span> <span class="st">"values"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> names, <span class="at">y =</span> values, <span class="at">fill =</span> Week_lifted)) <span class="sc">+</span></span>
+<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">color =</span> <span class="st">"grey"</span>, <span class="at">linetype =</span> <span class="dv">2</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">color =</span> Week_lifted), <span class="at">position =</span> <span class="fu">position_jitterdodge</span>(<span class="at">jitter.width =</span> <span class="fl">0.2</span>), <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb41-14"><a href="#cb41-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outliers =</span> <span class="cn">FALSE</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb41-15"><a href="#cb41-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="fu">aes</span>(<span class="at">color =</span> Week_lifted), <span class="at">fun.y=</span><span class="st">"mean"</span>, <span class="at">shape=</span><span class="dv">23</span>, <span class="at">position =</span> <span class="fu">position_jitterdodge</span>(<span class="at">jitter.width =</span> <span class="dv">0</span>)) <span class="sc">+</span></span>
+<span id="cb41-16"><a href="#cb41-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">breaks=</span><span class="fu">seq</span>(<span class="sc">-</span><span class="dv">5</span>,<span class="dv">7</span>,<span class="dv">1</span>), <span class="at">limits =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">5</span>,<span class="dv">7</span>)) <span class="sc">+</span></span>
+<span id="cb41-17"><a href="#cb41-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">labels=</span><span class="fu">c</span>(<span class="st">"african_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje</span><span class="sc">\n</span><span class="st">Negros"</span>,</span>
+<span id="cb41-18"><a href="#cb41-18" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"asian_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje</span><span class="sc">\n</span><span class="st">Asiáticos"</span>,</span>
+<span id="cb41-19"><a href="#cb41-19" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"hispanic_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje</span><span class="sc">\n</span><span class="st">Hispanos"</span>,</span>
+<span id="cb41-20"><a href="#cb41-20" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"white_scale"</span> <span class="ot">=</span> <span class="st">"Porcentaje</span><span class="sc">\n</span><span class="st">Blancos"</span>)) <span class="sc">+</span></span>
+<span id="cb41-21"><a href="#cb41-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Valores Escalados de la Variable"</span>, <span class="at">title =</span> <span class="st">"Distribución del Staff de Acuerdo a la Raza o Grupo Étnico"</span>) <span class="sc">+</span></span>
+<span id="cb41-22"><a href="#cb41-22" aria-hidden="true" tabindex="-1"></a>  theme_tfg</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: Removed 16 rows containing missing values or values outside the scale range
 (`geom_segment()`).</code></pre>
@@ -1110,7 +1148,7 @@ $ Week_lifted            &lt;fct&gt; 1, 2, 2, 2, 4, 1, 3, 1, 3, 1, 1, 4, 1, 2, 2
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="main_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="main_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>

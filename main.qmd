@@ -16,6 +16,7 @@ library(zoo)
 library(sf)
 library(gt)
 library(gtsummary)
+library(ggpubr)
 ```
 
 ```{r}
@@ -120,27 +121,62 @@ df <- df %>%
 
 # Selección de los distritos escolares
 
+Inicialmente, se obtiene que 400 distritos escolares han reportado casos de COVID-19 a DESE. Sin embargo, para el estudio se han excluido los distritos metropolitanos, vocacionales y técnicos y se ha restringido a los distritos escolares incluidos en Boston-Newton-Cambridge New England City y Town Area (NECTA), resultando en un total de 79 distritos. Adicionalmente, se han excluido 7 distritos escolares debido a la inconsistencia de los datos enviados.
+
 ```{r}
 selected_districts <- read_delim("data/selected_districts.csv", 
     delim = ";", escape_double = FALSE, trim_ws = TRUE)
-selected_districts$Week_lifted <- as.factor(selected_districts$Week_lifted)
-```
 
-```{r}
+selected_districts$Week_lifted <- as.factor(selected_districts$Week_lifted)
+
+mapa_eeuu <- st_as_sf(maps::map("state",fill = TRUE, plot = FALSE))
+
 mapa <- sf::st_read("data/schooldistricts/schooldistricts_poly.shp")
 
-mapa %>%
-  left_join(selected_districts, by = c("ORG8CODE"="Code")) %>%
-  ggplot(aes(fill = Week_lifted)) +
-  geom_sf() +
-  scale_fill_manual(breaks = c(1,2,3,4),
-                    values = c("#fcfccf","#5fbaa5","#53749f","#423645"),
-                    na.value = "lightgrey") +
-  theme_void()
+mapa <- mapa %>% select(ORG8CODE,geometry)
+
+mapa <- mapa %>% left_join(selected_districts %>% select(-Name), by = c("ORG8CODE"="Code"))
+mapa$Neighboring[is.na(mapa$Neighboring)] <- 4
+mapa$Neighboring <- as.factor(mapa$Neighboring)
+
+selected_districts$Neighboring <- as.factor(selected_districts$Neighboring)
 ```
 
 ```{r}
-df <- inner_join(df,selected_districts %>% select(-Name))
+#| warning: false
+ggplot() +
+  geom_sf(data = mapa_eeuu, fill = "#f2f2f2") +
+  geom_sf(data = mapa, aes(fill = Neighboring)) +
+  stat_sf_coordinates(data = mapa %>% filter(Week_lifted == -1)) +
+  scale_fill_manual(breaks = c(1,2,3,4),
+                    values = c("#040613","#3f4b95","#62a9c7","#d9d9d9"),
+                    labels = c("Boston/Chelsea\n(n=2)","Adyacentes\n(n=13)","Incluidos en NECTA Division\n(n=64)","No Incluidos en NECTA Division\n(n=211)")) +
+  labs(title = "Distritos Escolares de Massachusetts", fill = "Categoría\nDistrito\nEscolar\n(N = 290)") +
+  coord_sf(xlim = c(-73.4,-70), ylim = c(41.25,42.85)) +
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.title = element_text(face="bold"))
+```
+
+```{r}
+#| warning: false
+ggplot() +
+  geom_sf(data = mapa_eeuu, fill = "#f2f2f2") +
+  geom_sf(data = mapa %>% filter(!is.na(Week_lifted) & Week_lifted != -1), aes(fill = Week_lifted)) +
+  geom_sf(data = mapa %>% filter(Week_lifted == -1), fill = NA) +
+  stat_sf_coordinates(data = mapa %>% filter(Week_lifted == -1)) +
+  scale_fill_manual(breaks = c(1,2,3,4),
+                    values = c("#fcfccf","#5fbaa5","#53749f","#423645"),
+                    labels = c("03-Mar-22\n(n=46)","10-Mar-22\n(n=17)","17-Mar-22\n(n=7)","Mantienen\n(n=2)")) +
+  labs(title = "Distritos Escolares por la Semana en el que se Eliminó\nla Restricción de las Mascarillas", fill = "Semana en el que la Restricción\nde las Mascarillas fue Eliminada") +
+  coord_sf(xlim = c(-71.7,-70.6), ylim = c(42,42.7)) +
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.title = element_text(face="bold"))
+```
+
+```{r}
+df <- inner_join(df,selected_districts %>% filter(Week_lifted != -1) %>% select(-Name))
 
 length(unique(df$Name))
 ```
@@ -208,7 +244,7 @@ enrollmentbyracegender <- read_excel("data/enrollmentbyracegender.xlsx",
 enrollmentbyracegender[,3:12] <- apply(enrollmentbyracegender[,3:12], 2, function(x){as.numeric(str_remove(x,","))})
 glimpse(enrollmentbyracegender)
 
-enrollmentbyracegender <- enrollmentbyracegender %>% inner_join(selected_districts %>% select(Code,Week_lifted), by = c("District Code" = "Code"))
+enrollmentbyracegender <- enrollmentbyracegender %>% inner_join(selected_districts %>% filter(Week_lifted != -1) %>% select(Code,Week_lifted), by = c("District Code" = "Code"))
 ```
 
 ```{r}
@@ -246,7 +282,7 @@ glimpse(selectedpopulations)
 selectedpopulations <- selectedpopulations %>% 
   select(`District Code`, `English Language Learner %`, `Students With Disabilities %`, `Low Income %`)
 
-selectedpopulations <- selectedpopulations %>% inner_join(selected_districts %>% select(Code,Week_lifted), by = c("District Code" = "Code"))
+selectedpopulations <- selectedpopulations %>% inner_join(selected_districts %>% filter(Week_lifted != -1) %>% select(Code,Week_lifted), by = c("District Code" = "Code"))
 
 glimpse(selectedpopulations)
 ```
@@ -288,7 +324,7 @@ glimpse(staffracegender)
 staffracegender <- staffracegender %>% 
   select(`District/School Code`, `African American (%)`, `Asian (%)`, `Hispanic (%)`, `White (%)`)
 
-staffracegender <- staffracegender %>% inner_join(selected_districts %>% select(Code,Week_lifted), by = c("District/School Code" = "Code"))
+staffracegender <- staffracegender %>% inner_join(selected_districts %>% filter(Week_lifted != -1) %>% select(Code,Week_lifted), by = c("District/School Code" = "Code"))
 
 glimpse(staffracegender)
 ```
