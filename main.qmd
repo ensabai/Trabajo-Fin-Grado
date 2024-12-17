@@ -46,7 +46,7 @@ Los reportes constan de la siguiente estructura:
 
 De este modo, el objetivo será extraer la información de las tablas correspondientes a la información de los distritos. Para ello, se ha implementado el siguiente código:
 
-1.  **Listado de los archivos.** Se lista el nombre de los archivos pdf contenidos en la carpeta data/reportes_covid. También se extraerá la fecha contenida en el nombre:
+1.  **Listado de los archivos.** Se lista el nombre de los archivos pdf contenidos en la carpeta data/reportes_covid.
 
 ```{r}
 archivos <- list.files("data/reportes_covid",pattern = ".pdf")
@@ -54,15 +54,23 @@ archivos <- list.files("data/reportes_covid",pattern = ".pdf")
 
 2.  **Extracción de los datos.** Implementamos una función que permita extraer la información deseada.
 
-La función recibe cómo parámetro un iterable con el nombre de los archivos y devuelve un dataframe con los datos correspondientes al código del distrito, nombre del distrito, número de casos covid-19 en alumnos, número de casos covid-19 en profesores, número de pruebas de grupo rutinarias, número de positivos y ratio positivos/pruebas.
+La función recibe cómo parámetro un iterable con el nombre de los archivos y devuelve un dataframe con los datos correspondientes al código del distrito, nombre del distrito, número de casos covid-19 en alumnos, número de casos covid-19 en profesores, número de pruebas de grupo rutinarias, número de positivos, ratio positivos/pruebas y la fecha del reporte, ésta será extraída del nombre del archivo.
 
 ```{r}
 #| warning: false
 obt_data_distritos <- function(archivos){
   
-  fechas <- str_extract(string = archivos, pattern = "\\d{4}-\\d{1,2}-\\d{1,2}")
+  fechas <- str_extract(string = archivos,
+                        pattern = "\\d{4}-\\d{1,2}-\\d{1,2}")
   
-  df <- data.frame(Code = NA, Name = NA, Students = NA, Staff = NA, PT = NA, PPT = NA, PPR = NA, Date = NA)
+  df <- data.frame(Code = NA,
+                   Name = NA,
+                   Students = NA,
+                   Staff = NA,
+                   PT = NA,
+                   PPT = NA,
+                   PPR = NA,
+                   Date = NA)
   
   for(i in 1:length(archivos)){
   
@@ -79,7 +87,15 @@ obt_data_distritos <- function(archivos){
         as_tibble(.name_repair=make.names)
       aux <- aux %>%
         slice(7:nrow(aux)) %>%
-        separate(X, into = c("Code","Name","Students","Staff","PT","PPT","PPR"), sep = "\\s{2,}")%>%
+        separate(X, 
+                 into = c("Code",
+                          "Name",
+                          "Students",
+                          "Staff",
+                          "PT",
+                          "PPT",
+                          "PPR"), 
+                 sep = "\\s{2,}")%>%
       filter(Code != "") %>% 
         mutate(Date = fechas[i])
       
@@ -87,7 +103,14 @@ obt_data_distritos <- function(archivos){
       aux <- df2[[p]] %>%
       str_split("\n") %>%
       as_tibble(.name_repair=make.names) %>%
-      separate(X, into = c("Code","Name","Students","Staff","PT","PPT","PPR"), sep = "\\s{2,}") %>%
+      separate(X, into = c("Code",
+                           "Name",
+                           "Students",
+                           "Staff",
+                           "PT",
+                           "PPT",
+                           "PPR"), 
+               sep = "\\s{2,}") %>%
       filter(Code != "") %>% 
         mutate(Date = fechas[i])
     }
@@ -121,7 +144,7 @@ df <- df %>%
 
 # Selección de los distritos escolares
 
-Inicialmente, se obtiene que 400 distritos escolares han reportado casos de COVID-19 a DESE. Sin embargo, para el estudio se han excluido los distritos metropolitanos, vocacionales y técnicos y se ha restringido a los distritos escolares incluidos en Boston-Newton-Cambridge New England City y Town Area (NECTA), resultando en un total de 79 distritos. Adicionalmente, se han excluido 7 distritos escolares debido a la inconsistencia de los datos enviados.
+A partir de los informes importados, se obtiene que 400 distritos escolares han reportado casos de COVID-19 a DESE. Sin embargo, para el estudio se han excluido los distritos metropolitanos, vocacionales y técnicos y se ha restringido a los distritos escolares incluidos en Boston-Newton-Cambridge New England City y Town Area (NECTA), resultando en un total de 79 distritos. Adicionalmente, se han excluido 7 distritos escolares debido a la inconsistencia de los datos enviados.
 
 ```{r}
 selected_districts <- read_delim("data/selected_districts.csv", 
@@ -135,7 +158,9 @@ mapa <- sf::st_read("data/schooldistricts/schooldistricts_poly.shp")
 
 mapa <- mapa %>% select(ORG8CODE,geometry)
 
-mapa <- mapa %>% left_join(selected_districts %>% select(-Name), by = c("ORG8CODE"="Code"))
+mapa <- mapa %>% 
+  left_join(selected_districts %>% select(-Name), 
+            by = c("ORG8CODE"="Code"))
 mapa$Neighboring[is.na(mapa$Neighboring)] <- 4
 mapa$Neighboring <- as.factor(mapa$Neighboring)
 
@@ -150,8 +175,12 @@ ggplot() +
   stat_sf_coordinates(data = mapa %>% filter(Week_lifted == -1)) +
   scale_fill_manual(breaks = c(1,2,3,4),
                     values = c("#040613","#3f4b95","#62a9c7","#d9d9d9"),
-                    labels = c("Boston/Chelsea\n(n=2)","Adyacentes\n(n=13)","Incluidos en NECTA Division\n(n=64)","No Incluidos en NECTA Division\n(n=211)")) +
-  labs(title = "Distritos Escolares de Massachusetts", fill = "Categoría\nDistrito\nEscolar\n(N = 290)") +
+                    labels = c("Boston/Chelsea\n(n=2)",
+                               "Adyacentes\n(n=13)",
+                               "Incluidos en NECTA\n(n=64)",
+                               "No Incluidos en NECTA\n(n=211)")) +
+  labs(title = "Distritos Escolares de Massachusetts", 
+       fill = "Categoría\nDistrito\nEscolar\n(N = 290)") +
   coord_sf(xlim = c(-73.4,-70), ylim = c(41.25,42.85)) +
   theme_void() +
   theme(legend.position = "bottom",
@@ -162,13 +191,18 @@ ggplot() +
 #| warning: false
 ggplot() +
   geom_sf(data = mapa_eeuu, fill = "#f2f2f2") +
-  geom_sf(data = mapa %>% filter(!is.na(Week_lifted) & Week_lifted != -1), aes(fill = Week_lifted)) +
+  geom_sf(data = mapa %>% filter(!is.na(Week_lifted) & Week_lifted != -1), 
+          aes(fill = Week_lifted)) +
   geom_sf(data = mapa %>% filter(Week_lifted == -1), fill = NA) +
   stat_sf_coordinates(data = mapa %>% filter(Week_lifted == -1)) +
   scale_fill_manual(breaks = c(1,2,3,4),
                     values = c("#fcfccf","#5fbaa5","#53749f","#423645"),
-                    labels = c("03-Mar-22\n(n=46)","10-Mar-22\n(n=17)","17-Mar-22\n(n=7)","Mantienen\n(n=2)")) +
-  labs(title = "Distritos Escolares por la Semana en el que se Eliminó\nla Restricción de las Mascarillas", fill = "Semana en el que la Restricción\nde las Mascarillas fue Eliminada") +
+                    labels = c("03-Mar-22\n(n=46)",
+                               "10-Mar-22\n(n=17)",
+                               "17-Mar-22\n(n=7)",
+                               "Mantienen\n(n=2)")) +
+  labs(title = "Distritos Escolares por la Semana en el que se Eliminó\nla Restricción de las Mascarillas", 
+       fill = "Semana en el que la Restricción\nde las Mascarillas fue Eliminada") +
   coord_sf(xlim = c(-71.7,-70.6), ylim = c(42,42.7)) +
   theme_void() +
   theme(legend.position = "bottom",
@@ -176,7 +210,9 @@ ggplot() +
 ```
 
 ```{r}
-df <- inner_join(df,selected_districts %>% filter(Week_lifted != -1) %>% select(-Name))
+df <- inner_join(df,selected_districts %>% 
+                   filter(Week_lifted != -1) 
+                 %>% select(-Name))
 
 length(unique(df$Name))
 ```
@@ -219,7 +255,7 @@ df_tabla <- df_tabla %>%
                                  ),
          Group_week = case_when(Group_week == 1 ~ "Pre-Omicron (Weeks 1-10, n= 10 weeks)",
                                 Group_week == 2 ~ "Omicron BA.1 (Weeks 11-25, n= 15 weeks)",
-                                Group_week == 3 ~ "Post-Lifting/Omicron BA.2+ (Weeks 26-40, n=15 weeks)")) %>%
+                                Group_week == 3 ~ "Post-Lifting/ Omicron BA.2+ (Weeks 26-40, n=15 weeks)")) %>%
   pivot_wider(names_from = Group_week, values_from = values)
 
 names(df_tabla)[1] <- "Week Masking Requirement Lifted"
@@ -229,22 +265,48 @@ names(df_tabla)[3] <- "n Districts"
 ```{r}
 df_tabla %>%
   gt(groupname_col = "names",
-     caption = "Tabla 1. Percentage of cases occurring pre-Omicron, during the Omicron BA.1 wave, and after masking requirements were lifted ") %>% 
+     caption = "Tabla 1. Percentage of cases occurring pre-Omicron,during the Omicron BA.1 wave, and after masking requirements were lifted ") %>% 
   summary_rows(
     groups = TRUE
   )
 ```
 
-# Otros indicadores
+# Procesado de los Datos
+
+```{r}
+enrollmentbygrade <- read_excel("data/enrollmentbygrade.xlsx", 
+    skip = 1)
+
+enrollmentbygrade <- enrollmentbygrade %>% 
+  select(`District Name`, `District Code`, `Total`)
+enrollmentbygrade <- enrollmentbygrade %>% 
+  mutate(Total = as.numeric(str_remove(Total,",")))
+
+enrollmentbygrade <- enrollmentbygrade %>% 
+  inner_join(selected_districts %>% 
+               filter(Week_lifted != -1) %>% 
+               select(-Neighboring, -Name), 
+             by = c("District Code"="Code"))
+```
+
+# Análisis Estadístico
+
+# Análisis Descriptivo
 
 ```{r}
 enrollmentbyracegender <- read_excel("data/enrollmentbyracegender.xlsx", 
     skip = 1)
 
-enrollmentbyracegender[,3:12] <- apply(enrollmentbyracegender[,3:12], 2, function(x){as.numeric(str_remove(x,","))})
+enrollmentbyracegender[,3:12] <- apply(enrollmentbyracegender[,3:12], 2,
+                                       function(x){as.numeric(str_remove(x,","))})
+
 glimpse(enrollmentbyracegender)
 
-enrollmentbyracegender <- enrollmentbyracegender %>% inner_join(selected_districts %>% filter(Week_lifted != -1) %>% select(Code,Week_lifted), by = c("District Code" = "Code"))
+enrollmentbyracegender <- enrollmentbyracegender %>%
+  inner_join(selected_districts %>% 
+               filter(Week_lifted != -1) %>% 
+               select(Code,Week_lifted), 
+             by = c("District Code" = "Code"))
 ```
 
 ```{r}
