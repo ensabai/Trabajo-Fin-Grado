@@ -1,0 +1,33 @@
+NOMBRE:  Carles Bretó Martínez
+DEPARTAMENTO: Anàlisi Econòmica
+
+
+TÍTULO DEL ANTEPROYECTO:
+Limitaciones de grandes conjuntos de datos de baja calidad (el "data defect index")
+
+
+PALABRAS CLAVE: [estas son genéricas; la idea es revisar el anteproyecto cuando la idea esté más pulida para que refleje de forma más precisa el proyecto definitivo]
+Encuestas, datos sesgados, ley de las grandes poblaciones, paradoja del Big Data
+
+
+DESCRIPCIÓN DE LOS OBJETIVOS:
+	Los objetivos planteados son revisar la literatura relativa a métodos para cuantificar errores inducidos por grandes conjuntos de datos de baja calidad y aplicar dichos métodos a conjuntos de datos para, por una parte, tratar de replicar análisis de datos que hayan sido publicados recientemente en revistas académicas y, por otra, explorar análisis complementarios y alternativos a dichos análisis publicados.
+	La relevancia de las limitaciones de los grandes conjuntos de datos de baja calidad en la línea de los objetivos planteados en esta propuesta de TFG viene avalada por el reciente trabajo de Xiao-Li Meng (Catedrático en Harvard) relativo a la "Big Data paradox". Este marco metodológico para cuantificar con el "data defect index" la calidad de los datos analizados ha resultado útil para corregir resultados apoyados en bases de datos de gran volumen que conducían a márgenes de error minúsculos alrededor de estimaciones erróneas.
+	Más concretamente, entre la literatura que se propone revisar y entre análisis de datos publicados que se propone tratar de replicar y complementar se encuentra el artículo "Unrepresentative big surveys significantly overestimated US vaccine uptake" (Bradley et al., 2021) publicado en la prestigiosa revista Science y cuyos datos están publicados en el Harvard Dataverse; y el artículo "Statistical Paradises and Paradoxes in Big Data (I): Law of Large Populations, Big Data Paradox and the 2016 US Presidential Election" (Meng, 2018) cuyos datos están publicados en el paquete de R "ddi".
+
+
+CRONOGRAMA, PLAN DE TRABAJO, ENTREGABLES:
+- Revisión y análisis inicial de bibliografía relacionada (aproximadamente 2 semanas).
+- Preparación inicial de conjuntos de datos (aprox. 2 sem.).
+- Elaboración de código para el análisis inicial de los datos (aprox. 3 sem.).
+- Análisis inicial de resultados (aprox. 1 sem.).
+
+En vista de los resultados iniciales,
+- Revisión y análisis adicionales de bibliografía relacionada (aprox. 2 sem.).
+- Tratamiento adicional de datos y elaboración de código adicional (aprox. 3 sem.).
+
+- Ultimación de un primer borrador de la memoria del TFG (aprox. 3 sem.).
+- Redacción definitiva de la memoria del TFG (aprox. 3 sem.).
+
+
+OBSERVACIONES: -

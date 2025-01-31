@@ -1,0 +1,161 @@
+\documentclass[twoside,spanish,a4paper,12pt]{tfg}
+
+% Editar la titulación
+\titulacion{Grado en Ciencia de Datos}
+
+% Editar el título
+\title{Título}
+
+% Si es una alumna se debe usar
+\authorlabel{Autora}
+%\authorlabel{Autor}
+% Editar el nombre
+\author{Nombre y Apellidos del autor}
+
+
+% Si hay varios tutores:
+% \tutorlabel{Tutores}
+% \tutor{Nombre del tutor 1 \\[2mm] Nombre del turor2}
+% Si el tutor es masculino:
+% \tutorlabel{Tutor}
+\tutorlabel{Tutor}
+% Editar
+\tutor{Carles Bretó}
+
+% Editar: Poner mes y año de la convocatoria de lectura del TFM
+\convocatoria{Julio 2024}
+% latex packages
+\usepackage{float}% to place figures [H]ere
+\usepackage{natbib}
+
+
+\begin{document}
+
+
+% NO QUITAR ESTOS ELEMENTOS
+\portada
+\cleardoublepage
+\contraportada
+\cleardoublepage
+\declaracion
+\cleardoublepage
+
+
+% r packages
+<<packages,echo=FALSE,eval=TRUE,include=FALSE>>=
+library(knitr)# to use opts_chunk$set()
+#library("MASS") ?
+library(pomp)# to use stew()
+library(tidyverse)# to use ...?
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+@
+
+<<setup,echo=FALSE,eval=TRUE,include=FALSE>>=
+# r options
+options(
+  # base R
+  continue="+  ",
+  encoding="UTF-8",
+  keep.source=TRUE,
+  scipen=2,
+  stringsAsFactors=FALSE,
+  prompt="R> ",
+  width=70,
+  useFancyQuotes=FALSE,
+  # formatR package
+  reindent.spaces=2,
+  # xtable package
+  xtable.comment=FALSE
+)
+
+# knitr options
+opts_chunk$set(
+  cache=TRUE,
+  eval=TRUE,
+  include=FALSE,
+  echo=FALSE,
+  purl=TRUE,
+  #
+  background="#FFFFFF00",
+  comment="",
+  dev="pdf",#dev="png",
+  dev.args=list(
+    bg="transparent",
+    pointsize=12
+  ),
+  dpi=300,
+  error=TRUE,
+  highlight=FALSE,
+  message=FALSE,
+#  fig.align="left",
+  fig.align="center",
+  fig.height=5,
+  fig.lp="fig:",
+  fig.path="./cache/figs/",
+  fig.show="asis",
+  fig.width=8,
+#  out.width="\\textwidth",
+  progress=TRUE,
+  prompt=TRUE,
+  results="markup",
+  size="normalsize",
+  strip.white=TRUE,
+  tidy=TRUE,
+  tidy.opts=list(keep.blank.line=FALSE),
+  warning=FALSE
+)
+@
+
+% Editar: Resumen en Español (obligatorio)
+\begin{resumen}
+
+Resumen.
+\end{resumen}
+\cleardoublepage
+
+% Editar: Resumen en Inglés
+\begin{abstract}
+
+Abstract.
+\end{abstract}
+\cleardoublepage
+
+% Editar: Resumen en Valenciano
+\begin{resum}
+
+Resum.
+\end{resum}
+\cleardoublepage
+
+
+% Editar: Agradecimientos (opcional)
+\begin{agradecimientos}
+
+Agradecimientos.
+\end{agradecimientos}
+\cleardoublepage
+
+\tableofcontents
+
+\pagestyle{tfg}
+\justify
+
+% Las figuras se buscan en el directorio figs
+
+% Cada capítulo está en su propio fichero tex. Ver el directorio tex.
+
+% La bibliografía está dentro del directorio bib
+\chapter{\LaTeX \;básico}
+
+\chapter{Citas}
+
+En un contexto académico, como es el de un TFG, se entiende que cualquier declaración que no haga referencia explícita a una fuente es de autoría propia \citep{mitlib2023}. Este tipo de cita \textit{indirecta} (con el comando \texttt{citep}) al documento \citet{mitlib2023} que va entre paréntesis se suele usar para citar fuentes genéricas sobre ideas amplias. Este segundo tipo de cita, más \textit{directo}, se usa para hacer referencia explícita y directa a otro documento, como podría ser, por ejemplo, \citet{Cowger2022}. 
+
+
+\bibliographystyle{apalike}
+\bibliography{bibliografia}
+
+
+\end{document}

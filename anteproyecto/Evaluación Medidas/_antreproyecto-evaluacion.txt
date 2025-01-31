@@ -1,0 +1,33 @@
+NOMBRE / NOM:  Carles Bretó Martínez
+DEPARTAMENTO / DEPARTAMENT: Anàlisi Econòmica
+
+
+TÍTULO DEL ANTEPROYECTO:
+Evaluación de efectividad de medidas mediante técnicas de inferencia causal
+
+
+PALABRAS CLAVE: [estas son genéricas; la idea es revisar el anteproyecto cuando la idea esté más pulida para que refleje de forma más precisa el proyecto definitivo]
+Efecto causal, medidas socioeconómicas, variables instrumentales, diferencias en diferencias
+
+
+DESCRIPCIÓN DE LOS OBJETIVOS:
+	Los objetivos planteados son revisar la literatura relativa a métodos estadísticos para la evaluación de efectividad de medidas y aplicar dichos métodos a conjuntos de datos para, por una parte, tratar de replicar análisis de datos que hayan sido publicados recientemente en revistas académicas y, por otra, explorar análisis complementarios y alternativos a dichos análisis publicados.
+	La relevancia de la evaluación de la efectividad de medidas en la línea de los objetivos planteados en esta propuesta de TFG viene avalada por el galardón del premio Nobel a Joshua D. Angrist (catedrático en MIT) por su trabajo relativo a "experimentos naturales". Estos experimentos naturales han resultado tener un gran potencial para establecer relaciones causales y así evaluar la efectividad de medidas de distinta índole, como políticas sanitarias y de contención de pandemias, políticas económicas y políticas de educación.
+	Más concretamente, entre la literatura que se propone revisar y entre análisis de datos publicados que se propone tratar de replicar y complementar se encuentra el artículo "Lifting Universal Masking in Schools--Covid-19 Incidence among Students and Staff" (Cowger et al., 2022) publicado en el prestigioso New England Journal of Medicine y cuyos datos fueron hechos públicos en su estado bruto por distintas instituciones de Massachusetts, como el Massachusetts DESE (Department of Elementary and Secondary Education).
+
+
+CRONOGRAMA, PLAN DE TRABAJO, ENTREGABLES:
+- Revisión y análisis inicial de bibliografía relacionada (aproximadamente 2 semanas).
+- Preparación inicial de conjuntos de datos (aprox. 2 sem.).
+- Elaboración de código para el análisis inicial de los datos (aprox. 3 sem.).
+- Análisis inicial de resultados (aprox. 1 sem.).
+
+En vista de los resultados iniciales,
+- Revisión y análisis adicionales de bibliografía relacionada (aprox. 2 sem.).
+- Tratamiento adicional de datos y elaboración de código adicional (aprox. 3 sem.).
+
+- Ultimación de un primer borrador de la memoria del TFG (aprox. 3 sem.).
+- Redacción definitiva de la memoria del TFG (aprox. 3 sem.).
+
+
+OBSERVACIONES: -

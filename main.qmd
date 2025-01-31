@@ -378,6 +378,14 @@ enrollmentbygrade <- enrollmentbygrade %>%
              by = c("District Code"="Code"))
 ```
 
+```{r}
+df_raw %>% 
+  inner_join(enrollmentbygrade %>% select(`District Code`,`Total`), by = c("Code"="District Code")) %>%
+  mutate(Students_weighted = Students / Total) %>%
+  filter(Date > as.Date("2022-03-03")) %>%
+  summarise(sum(Students_weighted) * 1000)
+```
+
 # Análisis Estadístico
 
 # Análisis Descriptivo
