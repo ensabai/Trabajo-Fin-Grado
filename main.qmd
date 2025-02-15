@@ -140,7 +140,11 @@ df_raw <- df_raw %>%
          PT = as.numeric(PT),
          PPT = as.numeric(PPT),
          Date = as.Date(Date)) %>%
-  filter(!is.na(Code))
+  filter(!is.na(Code)) %>%
+  select(-PPR)
+
+df_raw$PT[is.na(df_raw$PT)] <- 0
+df_raw$PPT[is.na(df_raw$PPT)] <- 0
 ```
 
 # Selección de los distritos escolares
@@ -226,17 +230,16 @@ Por otra parte, el distrito escolar de Brookline restauró la obligatoriedad de 
 df_raw <- df_raw %>% filter(!(Date >= as.Date("2022-06-02") & Name == "Brookline"))
 ```
 
-A continuación se muestra una tabla con los datos sobre
-el porcentaje de casos pre-Omicron, durante la ola Omicron BA.1, y después de la eliminación de la restricción de la mascarilla.
+A continuación se muestra una tabla con los datos sobre el porcentaje de casos pre-Omicron, durante la ola Omicron BA.1, y después de la eliminación de la restricción de la mascarilla.
 
 ```{r}
 df_tabla <- df_raw %>%
   mutate(All = Students + Staff,
-         Week = round(as.numeric((Date - as.Date("2021-09-16"))/7+1)),
+         Week = round(as.numeric((Date - as.Date("2021-09-9"))/7)),
          Group_week = case_when(Week <= 10 ~ 1,
                                 Week >= 11 & Week <= 25 ~ 2,
                                 Week >= 26 ~ 3)) %>%
-  select(-c(PT,PPT,PPR,Date,Name,Week)) %>% 
+  select(-c(PT,PPT,Date,Name,Week)) %>% 
   pivot_longer(c(Students,Staff,All), names_to = "names", values_to = "values")
 
 df_tabla_aux <- df_tabla
@@ -266,9 +269,7 @@ df_tabla <- df_tabla %>%
 
 names(df_tabla)[1] <- "Week Masking Requirement Lifted"
 names(df_tabla)[3] <- "n Districts"
-```
 
-```{r}
 df_tabla %>%
   gt(groupname_col = "names",
      caption = "Tabla 1. Porcentaje de casos pre-Omicron, durante la ola Omicron BA.1, y después de la eliminación de la restricción de las mascarillas") %>% 
@@ -279,237 +280,376 @@ df_tabla %>%
 
 # Preprocesado de los Datos
 
-## Limpieza de los Datos
+## Data Cleaning
+
+### 2-week reporting weeks
 
 ```{r}
-df_stu <- df_raw %>% 
-  select(Code,Students,Date) %>%
-  pivot_wider(names_from = Code,values_from = Students) %>%
-  arrange(Date)
-
-for(f in 2:nrow(df_stu)){
-  if(df_stu$Date[f] - df_stu$Date[f-1] >= 14){
-    sem_imp <- cbind(Date = df_stu$Date[f] - 7,df_stu[df_stu$Date == df_stu$Date[f],2:73] / 2)
-    df_stu[df_stu$Date == df_stu$Date[f],2:73] <- df_stu[df_stu$Date == df_stu$Date[f],2:73] / 2
-    df_stu <- rbind(df_stu,sem_imp)
+week2correction <- function(df_raw){
+  
+  for (population in c("Students","Staff")){
+    df_wider <- df_raw %>%
+      select(Date,Name,all_of(population)) %>%
+      pivot_wider(names_from = Name, values_from = population)
+    
+    for (i in 2:nrow(df_wider)){
+      if(df_wider$Date[i] - df_wider$Date[i-1] == 14){
+        aux <- df_wider[i,2:ncol(df_wider)] / 2
+        df_wider[i,2:ncol(df_wider)] <- df_wider[i,2:ncol(df_wider)] / 2
+        aux <- cbind(Date=c(df_wider$Date[i]-7),aux)
+        df_wider <- rbind(df_wider,aux)
+        }
+    }
+    
+    df_wider <- df_wider %>% arrange(Date)
+    
+    df_raw_aux <- df_wider %>%
+      pivot_longer(2:ncol(df_wider),names_to = "Name", 
+                   values_to = paste0(population,"_corr"))
+    
+    df_raw <- df_raw %>% full_join(df_raw_aux, by=c("Name","Date"))
   }
+  
+  df_raw <- df_raw %>% 
+    mutate(All_corr = Students_corr + Staff_corr) %>% 
+    filter(!is.na(All_corr)) %>% 
+    select(-c(Code,Week_lifted,Neighboring)) %>% 
+    left_join(selected_districts) %>% 
+    arrange(Date)
+  
+  return(df_raw)
 }
-
-df_stu <- df_stu %>% arrange(Date)
-
-df_stu %>% pivot_longer(-1,names_to = "Code",values_to = "Students") %>% 
-  summarise(sum(Students, na.rm = TRUE))
 ```
 
 ```{r}
-fecha <- df_stu$Date
+df_cor <- week2correction(df_raw)
+df_cor %>% 
+  select(Name,Date,Students_corr) %>% 
+  pivot_wider(names_from = Name, values_from = Students_corr)
+```
 
-df_stu <- as.data.frame(apply(df_stu %>% select(-Date),2,function(x){
-  for(f in 2:length(x)){
-    if(!is.na(x[f]) & x[f] > 1 & x[f-1] == 0){
-      x[f-1] <- x[f]/2
-      x[f] <- x[f]/2
+### Zero reporting weeks
+
+```{r}
+cases0correction1 <- function(df_cor){
+  media_movil <- data.frame(Name=NULL,Date=NULL,All_corr=NULL,media=NULL)
+  for(name in unique(df_cor$Name)){
+    aux <- df_cor %>%
+      filter(Name == name) %>%
+      select(Name,Date,All_corr) %>%
+      mutate(media = (rollmean(All_corr,k=5,fill=NA,align="right")-All_corr/5)*(5/4))
+    media_movil <- rbind(media_movil,aux)
+  }
+    
+  df_cor <- df_cor %>%
+    left_join(media_movil %>% select(-All_corr), by = c("Name","Date")) %>%
+    mutate(Students_corr = ifelse(All_corr == 0 & (PPT >= 1 | (!is.na(media) & media > 10)),NA,Students_corr),
+           Staff_corr = ifelse(All_corr == 0 & (PPT >= 1 | (!is.na(media) & media > 10)),NA,Staff_corr),
+           All_corr = ifelse(All_corr == 0 & (PPT >= 1 | (!is.na(media) & media > 10)),NA,All_corr)) %>% 
+    select(Code,Name,Week_lifted,Date,Students_corr,Staff_corr,All_corr)
+  
+  return(df_cor)
+}
+```
+
+```{r}
+df_cor <- cases0correction1(df_cor)
+df_cor
+```
+
+```{r}
+df_cor %>%
+  select(Date, Name, Students_corr) %>%
+  pivot_wider(names_from = Name, values_from = Students_corr)
+```
+
+```{r}
+cases0correction2 <- function(df_cor){
+  for(name in unique(df_cor$Name)){
+    aux <- df_cor %>%
+      filter(Name == name)
+    
+    for(i in 1:(nrow(aux)-1)){
+      if(is.na(aux$All_corr[i])){
+        df_cor$Students_corr[df_cor$Date==aux$Date[i] & df_cor$Name==name] <- df_cor$Students_corr[df_cor$Date==aux$Date[i+1] & df_cor$Name==name] / 2
+        df_cor$Students_corr[df_cor$Date==aux$Date[i+1] & df_cor$Name==name] <- df_cor$Students_corr[df_cor$Date==aux$Date[i+1] & df_cor$Name==name] / 2
+        
+        df_cor$Staff_corr[df_cor$Date==aux$Date[i] & df_cor$Name==name] <- df_cor$Staff_corr[df_cor$Date==aux$Date[i+1] & df_cor$Name==name] / 2
+        df_cor$Staff_corr[df_cor$Date==aux$Date[i+1] & df_cor$Name==name] <- df_cor$Staff_corr[df_cor$Date==aux$Date[i+1] & df_cor$Name==name] / 2
+        
+        df_cor$All_corr[df_cor$Date==aux$Date[i] & df_cor$Name==name] <- df_cor$All_corr[df_cor$Date==aux$Date[i+1] & df_cor$Name==name] / 2
+        df_cor$All_corr[df_cor$Date==aux$Date[i+1] & df_cor$Name==name] <- df_cor$All_corr[df_cor$Date==aux$Date[i+1] & df_cor$Name==name] / 2
+      }
     }
   }
-  return(x)
-}))
-
-df_stu <- cbind(Date = fecha, df_stu)
-
-df_stu <- df_stu %>% pivot_longer(-1,names_to = "Code",values_to = "Students")
-
-df_stu %>% summarise(sum(Students, na.rm = TRUE))
-```
-
-```{r}
-df_staff <- df_raw %>% 
-  select(Code,Staff,Date) %>%
-  pivot_wider(names_from = Code,values_from = Staff) %>%
-  arrange(Date)
-
-for(f in 2:nrow(df_staff)){
-  if(df_staff$Date[f] - df_staff$Date[f-1] >= 14){
-    sem_imp <- cbind(Date = df_staff$Date[f] - 7,df_staff[df_staff$Date == df_staff$Date[f],2:73] / 2)
-    df_staff[df_staff$Date == df_staff$Date[f],2:73] <- df_staff[df_staff$Date == df_staff$Date[f],2:73] / 2
-    df_staff <- rbind(df_staff,sem_imp)
-  }
+  
+  return(df_cor)
 }
-
-df_staff <- df_staff %>% arrange(Date)
 ```
 
 ```{r}
-fecha <- df_staff$Date
-
-df_staff <- as.data.frame(apply(df_staff %>% select(-Date),2,function(x){
-  for(f in 2:length(x)){
-    if(!is.na(x[f]) & x[f] > 1 & x[f-1] == 0){
-      x[f-1] <- x[f]/2
-      x[f] <- x[f]/2
-    }
-  }
-  return(x)
-}))
-
-df_staff <- cbind(Date = fecha, df_staff)
-
-df_staff <- df_staff %>% pivot_longer(-1,names_to = "Code",values_to = "Staff")
+df_cor <- cases0correction2(df_cor)
+df_cor <- cases0correction2(df_cor)
+df_cor %>%
+  select(Date, Name, Students_corr) %>%
+  pivot_wider(names_from = Name, values_from = Students_corr)
 ```
 
-```{r}
-df_clean <- inner_join(df_stu, df_staff)
-```
 
-## Ponderación del número de casos por población del distrito escolar
+## Population Weighted
 
 ```{r}
 enrollmentbygrade <- read_excel("data/enrollmentbygrade.xlsx", 
     skip = 1)
+  
+df_weighted <- enrollmentbygrade %>%
+  rename(Code = `District Code`,
+         N_Students = Total) %>%
+  select(Code, N_Students) %>%
+  mutate(N_Students = as.numeric(str_remove_all(N_Students,","))) %>%
+  right_join(df_cor, by = c("Code")) %>%
+  mutate(Week = round(as.numeric((Date - as.Date("2021-09-9"))/7)),
+       Students_weighted = Students_corr / N_Students) %>% 
+  filter(!is.na(Students_weighted)) %>% 
+  mutate(mask_lifted = case_when(Week_lifted == 1 & Week >= 26 ~ TRUE,
+                                 Week_lifted == 2 & Week >= 27 ~ TRUE,
+                                 Week_lifted == 3 & Week >= 28 ~ TRUE,
+                                 .default = FALSE))
 
-enrollmentbygrade <- enrollmentbygrade %>% 
-  select(`District Name`, `District Code`, `Total`)
-enrollmentbygrade <- enrollmentbygrade %>% 
-  mutate(Total = as.numeric(str_remove(Total,",")))
 
-enrollmentbygrade <- enrollmentbygrade %>% 
-  inner_join(selected_districts %>% 
-               filter(Week_lifted != -1) %>% 
-               select(-Neighboring, -Name), 
-             by = c("District Code"="Code"))
+```
+
+
+# Análisis Estadístico
+
+## Evolución
+
+```{r}
+df_weighted$Students_mm <- NA
+for (district in unique(df_weighted$Name)) {
+  df_weighted$Students_mm[df_weighted$Name==district]=rollmean(df_weighted$Students_weighted[df_weighted$Name==district],k=3,fill=NA,align ="center")
+}
 ```
 
 ```{r}
-df_raw %>% 
-  inner_join(enrollmentbygrade %>% select(`District Code`,`Total`), by = c("Code"="District Code")) %>%
-  mutate(Students_weighted = Students / Total) %>%
-  filter(Date > as.Date("2022-03-03")) %>%
-  summarise(sum(Students_weighted) * 1000)
+df_weighted %>% 
+  group_by(Date,Week_lifted) %>% 
+  summarise(media = mean(Students_mm,na.rm=TRUE)) %>%
+  ggplot(aes(x = Date, y = media * 1000, color = Week_lifted)) +
+  geom_point() +
+  geom_line() +
+  xlim(as.Date("2022-01-15"),NA) +
+  theme_minimal()
 ```
 
-# Análisis Estadístico
+## Modelo con datos
+
+```{r}
+df_model <- df_weighted %>% 
+  mutate(treated = ifelse(Week_lifted != 4, 1, 0),
+         first.treat = case_when(Week_lifted == 1 ~ 26,
+                                Week_lifted == 2 ~ 27,
+                                Week_lifted == 3 ~ 28,
+                                .default = 0),
+         Students_weighted = Students_weighted * 1000,
+         Code = as.numeric(Code)) %>% 
+  select(Week,Code,Students_weighted,first.treat,treated,mask_lifted)
+```
+
+```{r}
+out <- att_gt(yname = "Students_weighted",
+              gname = "first.treat",
+              idname = "Code",
+              tname = "Week",
+              data = df_model,
+              est_method = "reg",
+              control_group = "notyettreated")
+
+summary(out)
+```
+
+```{r}
+ggdid(out)
+```
+
+```{r}
+es <- aggte(out, type = "dynamic")
+summary(es)
+```
+
+```{r}
+ggdid(es)
+```
+
+```{r}
+
+agg_df <- data.frame(
+  Time = es$egt,      # Tiempo relativo al tratamiento
+  Effect = es$att.egt, # Efecto estimado en cada período
+  SE = es$se.egt,      # Error estándar
+  CI_lower = es$att.egt - 1.96 * es$se.egt,  # Límite inferior del IC 95%
+  CI_upper = es$att.egt + 1.96 * es$se.egt,   # Límite superior del IC 95%
+  post = ifelse(es$egt >= 0, "1", "0")
+)
+
+ggplot(agg_df, aes(x = Time, y = Effect)) +
+  geom_polygon(data = data.frame(x = c(-11.5,-11.5,-5.5,-5.5), y = c(-10,20,20,-10)), aes(x = x, y = y), fill = "#f3f3f4") +
+  geom_hline(yintercept = 0, color = "grey", linetype = 2, size = 0.5) +
+  geom_vline(xintercept = 0, color = "grey", linetype = 2, size = 0.5) +
+  geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper, color = post), alpha = 0.7) +
+  geom_point(aes(fill = post),color = "black", shape=21, size=3) +
+  scale_fill_manual(breaks = c("0","1"),
+                     values = c("#6996ab","#286981")) +
+  scale_color_manual(breaks = c("0","1"),
+                     values = c("#6996ab","#286981")) +
+  labs(title = "Efecto Dinámico del Tratamiento",
+       x = "Tiempo Relativo",
+       y = "Efecto Estimado") +
+  theme_tfg +
+  theme(legend.position = "None")
+```
+
+
+```{r}
+group_effects <- aggte(out, type = "group")
+summary(group_effects)
+```
 
 # Análisis Descriptivo
 
 ```{r}
-enrollmentbyracegender <- read_excel("data/enrollmentbyracegender.xlsx", 
-    skip = 1)
-
-enrollmentbyracegender[,3:12] <- apply(enrollmentbyracegender[,3:12], 2,
-                                       function(x){as.numeric(str_remove(x,","))})
-
-glimpse(enrollmentbyracegender)
-
-enrollmentbyracegender <- enrollmentbyracegender %>%
-  inner_join(selected_districts %>% 
-               filter(Week_lifted != -1) %>% 
-               select(Code,Week_lifted), 
-             by = c("District Code" = "Code"))
+showstudentsrace <- function(){
+  enrollmentbyracegender <- read_excel("data/enrollmentbyracegender.xlsx",skip = 1)
+  
+  enrollmentbyracegender[,3:12] <- apply(enrollmentbyracegender[,3:12], 2,
+                                         function(x){as.numeric(str_remove(x,","))})
+  
+  enrollmentbyracegender <- enrollmentbyracegender %>%
+    inner_join(selected_districts %>%
+                 filter(Week_lifted != -1) %>%
+                 select(Code,Week_lifted),
+               by = c("District Code" = "Code"))
+  
+  enrollmentbyracegender$african_scale <- scale(enrollmentbyracegender$`African American`)[,1]
+  enrollmentbyracegender$asian_scale <- scale(enrollmentbyracegender$`Asian`)[,1]
+  enrollmentbyracegender$hispanic_scale <- scale(enrollmentbyracegender$`Hispanic`)[,1]
+  enrollmentbyracegender$white_scale <- scale(enrollmentbyracegender$`White`)[,1]
+  
+  enrollmentbyracegender <- enrollmentbyracegender %>%
+    select(`District Code`,Week_lifted,african_scale,asian_scale,hispanic_scale,white_scale)
+  
+  graf <- enrollmentbyracegender %>%
+    pivot_longer(3:6,names_to = "names",values_to = "values") %>%
+    ggplot(aes(x = names, y = values, fill = Week_lifted)) +
+    geom_hline(yintercept = 0, color = "grey", linetype = 2, size = 0.8) +
+    geom_point(aes(color = Week_lifted), position = position_jitterdodge(jitter.width = 0.2), alpha = 0.4) +
+    geom_boxplot(outliers = FALSE, alpha = 0.4) +
+    stat_summary(aes(color = Week_lifted), fun.y="mean", shape=23, position = position_jitterdodge(jitter.width = 0)) +
+    scale_y_continuous(breaks=seq(-3,6,1), limits = c(-3,6)) +
+    scale_x_discrete(labels=c("african_scale" = "Porcentaje\nNegros",
+                              "asian_scale" = "Porcentaje\nAsiáticos",
+                              "hispanic_scale" = "Porcentaje\nHispanos",
+                              "white_scale" = "Porcentaje\nBlancos")) +
+    labs(y = "Valores Escalados de la Variable", title = "Distribución de los Estudiantes de Acuerdo a la Raza o Grupo Étnico") +
+    theme_tfg
+  
+  return(graf)
+}
 ```
 
 ```{r}
-enrollmentbyracegender$african_scale <- scale(enrollmentbyracegender$`African American`)[,1]
-enrollmentbyracegender$asian_scale <- scale(enrollmentbyracegender$`Asian`)[,1]
-enrollmentbyracegender$hispanic_scale <- scale(enrollmentbyracegender$`Hispanic`)[,1]
-enrollmentbyracegender$white_scale <- scale(enrollmentbyracegender$`White`)[,1]
-
-enrollmentbyracegender <- enrollmentbyracegender %>% 
-  select(`District Code`,Week_lifted,african_scale,asian_scale,hispanic_scale,white_scale)
-
-enrollmentbyracegender %>% 
-  pivot_longer(3:6,names_to = "names",values_to = "values") %>%
-  ggplot(aes(x = names, y = values, fill = Week_lifted)) +
-  geom_hline(yintercept = 0, color = "grey", linetype = 2, size = 0.8) +
-  geom_point(aes(color = Week_lifted), position = position_jitterdodge(jitter.width = 0.2), alpha = 0.4) +
-  geom_boxplot(outliers = FALSE, alpha = 0.4) +
-  stat_summary(aes(color = Week_lifted), fun.y="mean", shape=23, position = position_jitterdodge(jitter.width = 0)) +
-  scale_y_continuous(breaks=seq(-3,6,1), limits = c(-3,6)) +
-  scale_x_discrete(labels=c("african_scale" = "Porcentaje\nNegros",
-                            "asian_scale" = "Porcentaje\nAsiáticos",
-                            "hispanic_scale" = "Porcentaje\nHispanos",
-                            "white_scale" = "Porcentaje\nBlancos")) +
-  labs(y = "Valores Escalados de la Variable", title = "Distribución de los Estudiantes de Acuerdo a la Raza o Grupo Étnico") +
-  theme_tfg
+showstudentsrace()
 ```
 
 ```{r}
-selectedpopulations <- read_excel("data/selectedpopulations.xlsx", 
-    skip = 1)
-
-selectedpopulations[,3:18] <- apply(selectedpopulations[,3:18], 2, function(x){as.numeric(str_remove(x,","))})
-glimpse(selectedpopulations)
-
-selectedpopulations <- selectedpopulations %>% 
-  select(`District Code`, `English Language Learner %`, `Students With Disabilities %`, `Low Income %`)
-
-selectedpopulations <- selectedpopulations %>% inner_join(selected_districts %>% filter(Week_lifted != -1) %>% select(Code,Week_lifted), by = c("District Code" = "Code"))
-
-glimpse(selectedpopulations)
+showstudentspopulations <- function(){
+  selectedpopulations <- read_excel("data/selectedpopulations.xlsx",
+                                    skip = 1)
+  
+  selectedpopulations[,3:18] <- apply(selectedpopulations[,3:18], 2, function(x){as.numeric(str_remove(x,","))})
+  
+  selectedpopulations <- selectedpopulations %>%
+    select(`District Code`, `English Language Learner %`, `Students With Disabilities %`, `Low Income %`)
+  
+  selectedpopulations <- selectedpopulations %>% 
+    inner_join(selected_districts %>% 
+                 filter(Week_lifted != -1) %>% 
+                 select(Code,Week_lifted), 
+               by = c("District Code" = "Code"))
+  
+  selectedpopulations$lis_scale <- scale(selectedpopulations$`Low Income %`)[,1]
+  selectedpopulations$sd_scale <- scale(selectedpopulations$`Students With Disabilities %`)[,1]
+  selectedpopulations$ell_scale <- scale(selectedpopulations$`English Language Learner %`)[,1]
+  
+  selectedpopulations <- selectedpopulations %>%
+    select(`District Code`,Week_lifted,lis_scale,sd_scale,ell_scale)
+  
+  graf <- selectedpopulations %>%
+    pivot_longer(3:5,names_to = "names",values_to = "values") %>%
+    ggplot(aes(x = names, y = values, fill = Week_lifted)) +
+    geom_hline(yintercept = 0, color = "grey", linetype = 2, size = 0.8) +
+    geom_point(aes(color = Week_lifted), position = position_jitterdodge(jitter.width = 0.2), alpha = 0.4) +
+    geom_boxplot(outliers = FALSE, alpha = 0.4) +
+    stat_summary(aes(color = Week_lifted), fun.y="mean", shape=23, position = position_jitterdodge(jitter.width = 0))+
+    scale_y_continuous(breaks=seq(-2,4,1), limits = c(-2,4.5)) +
+    scale_x_discrete(limits = c("lis_scale","sd_scale","ell_scale"),
+                     labels=c("lis_scale" = "Porcentaje de\nEstudiantes con\nBajos Ingresos",
+                              "sd_scale" = "Porcentaje de\nEstudiantes con\n Discapacidad",
+                              "ell_scale" = "Porcentaje de\nEstudiantes ELL")) +
+    labs(y = "Valores Escalados de la Variable", title = "Distribución de los Estudiantes en Poblaciones Seleccionadas por DESE") +
+    theme_tfg
+  
+  return(graf)
+}
 ```
 
 ```{r}
-selectedpopulations$lis_scale <- scale(selectedpopulations$`Low Income %`)[,1]
-selectedpopulations$sd_scale <- scale(selectedpopulations$`Students With Disabilities %`)[,1]
-selectedpopulations$ell_scale <- scale(selectedpopulations$`English Language Learner %`)[,1]
+showstudentspopulations()
 ```
 
 ```{r}
-#| warning: false
-selectedpopulations <- selectedpopulations %>% 
-  select(`District Code`,Week_lifted,lis_scale,sd_scale,ell_scale)
-
-selectedpopulations %>% 
-  pivot_longer(3:5,names_to = "names",values_to = "values") %>%
-  ggplot(aes(x = names, y = values, fill = Week_lifted)) +
-  geom_hline(yintercept = 0, color = "grey", linetype = 2, size = 0.8) +
-  geom_point(aes(color = Week_lifted), position = position_jitterdodge(jitter.width = 0.2), alpha = 0.4) +
-  geom_boxplot(outliers = FALSE, alpha = 0.4) +
-  stat_summary(aes(color = Week_lifted), fun.y="mean", shape=23, position = position_jitterdodge(jitter.width = 0))+
-  scale_y_continuous(breaks=seq(-2,4,1), limits = c(-2,4.5)) +
-  scale_x_discrete(limits = c("lis_scale","sd_scale","ell_scale"),
-                   labels=c("lis_scale" = "Porcentaje de\nEstudiantes con\nBajos Ingresos",
-                            "sd_scale" = "Porcentaje de\nEstudiantes con\n Discapacidad",
-                            "ell_scale" = "Porcentaje de\nEstudiantes ELL")) +
-  labs(y = "Valores Escalados de la Variable", title = "Distribución de los Estudiantes en Poblaciones Seleccionadas por DESE") +
-  theme_tfg
+showstaffrace <- function(){
+  staffracegender <- read_excel("data/staffracegender.xlsx",
+                                skip = 1)
+  
+  staffracegender[,3:12] <- apply(staffracegender[,3:12], 2, function(x){as.numeric(str_remove(x,","))})
+  staffracegender <- staffracegender %>%
+    select(`District/School Code`, `African American (%)`, `Asian (%)`, `Hispanic (%)`, `White (%)`)
+  staffracegender <- staffracegender %>%
+    inner_join(selected_districts %>%
+                 filter(Week_lifted != -1) %>%
+                 select(Code,Week_lifted),
+               by = c("District/School Code" = "Code"))
+  
+  staffracegender$african_scale <- scale(staffracegender$`African American (%)`)[,1]
+  staffracegender$asian_scale <- scale(staffracegender$`Asian (%)`)[,1]
+  staffracegender$hispanic_scale <- scale(staffracegender$`Hispanic (%)`)[,1]
+  staffracegender$white_scale <- scale(staffracegender$`White (%)`)[,1]
+  
+  staffracegender <- staffracegender %>%
+    select(`District/School Code`,Week_lifted,african_scale,asian_scale,hispanic_scale,white_scale)
+  
+  graf <- staffracegender %>%
+    pivot_longer(3:6,names_to = "names",values_to = "values") %>%
+    ggplot(aes(x = names, y = values, fill = Week_lifted)) +
+    geom_hline(yintercept = 0, color = "grey", linetype = 2, size = 0.8) +
+    geom_point(aes(color = Week_lifted), position = position_jitterdodge(jitter.width = 0.2), alpha = 0.4) +
+    geom_boxplot(outliers = FALSE, alpha = 0.4) +
+    stat_summary(aes(color = Week_lifted), fun.y="mean", shape=23, position = position_jitterdodge(jitter.width = 0)) +
+    scale_y_continuous(breaks=seq(-5,7,1), limits = c(-5,7)) +
+    scale_x_discrete(labels=c("african_scale" = "Porcentaje\nNegros",
+                              "asian_scale" = "Porcentaje\nAsiáticos",
+                              "hispanic_scale" = "Porcentaje\nHispanos",
+                              "white_scale" = "Porcentaje\nBlancos")) +
+    labs(y = "Valores Escalados de la Variable", title = "Distribución del Staff de Acuerdo a la Raza o Grupo Étnico") +
+    theme_tfg
+  
+  return(graf)
+}
 ```
 
-```{r}
-staffracegender <- read_excel("data/staffracegender.xlsx", 
-    skip = 1)
-
-staffracegender[,3:12] <- apply(staffracegender[,3:12], 2, function(x){as.numeric(str_remove(x,","))})
-glimpse(staffracegender)
-
-staffracegender <- staffracegender %>% 
-  select(`District/School Code`, `African American (%)`, `Asian (%)`, `Hispanic (%)`, `White (%)`)
-
-staffracegender <- staffracegender %>% inner_join(selected_districts %>% filter(Week_lifted != -1) %>% select(Code,Week_lifted), by = c("District/School Code" = "Code"))
-
-glimpse(staffracegender)
-```
 
 ```{r}
-staffracegender$african_scale <- scale(staffracegender$`African American (%)`)[,1]
-staffracegender$asian_scale <- scale(staffracegender$`Asian (%)`)[,1]
-staffracegender$hispanic_scale <- scale(staffracegender$`Hispanic (%)`)[,1]
-staffracegender$white_scale <- scale(staffracegender$`White (%)`)[,1]
-
-staffracegender <- staffracegender %>% 
-  select(`District/School Code`,Week_lifted,african_scale,asian_scale,hispanic_scale,white_scale)
-
-staffracegender %>% 
-  pivot_longer(3:6,names_to = "names",values_to = "values") %>%
-  ggplot(aes(x = names, y = values, fill = Week_lifted)) +
-  geom_hline(yintercept = 0, color = "grey", linetype = 2, size = 0.8) +
-  geom_point(aes(color = Week_lifted), position = position_jitterdodge(jitter.width = 0.2), alpha = 0.4) +
-  geom_boxplot(outliers = FALSE, alpha = 0.4) +
-  stat_summary(aes(color = Week_lifted), fun.y="mean", shape=23, position = position_jitterdodge(jitter.width = 0)) +
-  scale_y_continuous(breaks=seq(-5,7,1), limits = c(-5,7)) +
-  scale_x_discrete(labels=c("african_scale" = "Porcentaje\nNegros",
-                            "asian_scale" = "Porcentaje\nAsiáticos",
-                            "hispanic_scale" = "Porcentaje\nHispanos",
-                            "white_scale" = "Porcentaje\nBlancos")) +
-  labs(y = "Valores Escalados de la Variable", title = "Distribución del Staff de Acuerdo a la Raza o Grupo Étnico") +
-  theme_tfg
+showstaffrace()
 ```
 
